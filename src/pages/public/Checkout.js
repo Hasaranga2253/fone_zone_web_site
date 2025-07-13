@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 function Checkout() {
   const [cartItems, setCartItems] = useState([]);
@@ -20,8 +21,8 @@ function Checkout() {
 
     const currentUser = JSON.parse(localStorage.getItem('user'));
     if (!currentUser) {
-      alert("Please login to place an order.");
-      navigate('/login');
+      toast.info("ℹ️ Please login to place an order.");
+      navigate('/');
       return;
     }
 
@@ -36,9 +37,9 @@ function Checkout() {
     };
 
     localStorage.setItem('userOrders', JSON.stringify([...allOrders, newOrder]));
-
     localStorage.removeItem('cart');
-    alert("✅ Order placed successfully!");
+
+    toast.success("✅ Order placed successfully!");
     navigate('/user/dashboard');
   };
 

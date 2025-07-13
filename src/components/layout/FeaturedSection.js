@@ -9,7 +9,7 @@ function FeaturedSection() {
     <div className="max-w-6xl mx-auto px-4 py-12">
       {/* 🔥 Carousel Section */}
       <h2 className="text-3xl md:text-4xl font-bold text-center mb-6 text-white animate-glow">
-        🔥 Featured Deals
+         Featured Deals
       </h2>
 
       <Carousel
@@ -23,22 +23,22 @@ function FeaturedSection() {
         className="rounded-xl shadow-xl overflow-hidden mb-12"
       >
         <div>
-          <img src="/images/iphone14pro.jpg" alt="iPhone 14 Pro" className="object-cover h-72 w-full" />
-          <p className="legend">iPhone 14 Pro – Now 20% Off</p>
+          <img src="/images/featured1.png" alt="iPhone 14 Pro" className="object-cover h-72 w-full" />
+          <p className="legend">15% OFF – Repair Services </p>
         </div>
         <div>
-          <img src="/images/s23.jpg" alt="Samsung Galaxy S23" className="object-cover h-72 w-full" />
-          <p className="legend">Samsung Galaxy S23 – Free Screen Guard</p>
+          <img src="/images/featured2.png" alt="Samsung Galaxy S23" className="object-cover h-72 w-full" />
+          <p className="legend">Samsung Galaxy S23 – Now 20% OFF</p>
         </div>
         <div>
-          <img src="/images/oneplus.jpg" alt="OnePlus Nord CE 3" className="object-cover h-72 w-full" />
-          <p className="legend">OnePlus Nord CE 3 – Limited Time Offer</p>
+          <img src="/images/featured3.png" alt="OnePlus Nord CE 3" className="object-cover h-72 w-full" />
+          <p className="legend">Free Delivery On Orders – Over $50</p>
         </div>
       </Carousel>
 
       {/* ❄️ Feature Cards Section */}
       <h2 className="text-3xl md:text-4xl font-bold text-center mb-10 text-white animate-glow">
-        🧊 Why Choose FoneZone?
+         Why Choose FoneZone?
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

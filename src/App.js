@@ -1,4 +1,3 @@
-// src/App.js
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
@@ -10,10 +9,6 @@ import Home from './pages/public/Home';
 import Shop from './pages/public/Shop';
 import Cart from './pages/public/Cart';
 import Checkout from './pages/public/Checkout';
-
-// Auth Pages
-import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
 
 // User Pages
 import UserDashboard from './pages/user/UserDashboard';
@@ -33,7 +28,6 @@ function App() {
   // ✅ Inject default admin on first load
   useEffect(() => {
     const existingUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
-
     const adminExists = existingUsers.some(
       user => user.email === 'admin@fonezone.com' && user.role === 'admin'
     );
@@ -53,17 +47,13 @@ function App() {
     <div className="min-h-screen bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white">
       <Router>
         <Routes>
-          {/* 🌐 Public Pages (wrapped in Layout) */}
+          {/* 🌐 Public Pages */}
           <Route path="/" element={<Layout><Home /></Layout>} />
           <Route path="/shop" element={<Layout><Shop /></Layout>} />
           <Route path="/cart" element={<Layout><Cart /></Layout>} />
           <Route path="/checkout" element={<Layout><Checkout /></Layout>} />
 
-          {/* 🔐 Auth Pages (no Layout for simplicity) */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-
-          {/* 👤 User Dashboard & Repair Routes */}
+          {/* 👤 User Pages */}
           <Route
             path="/user/dashboard"
             element={
@@ -89,7 +79,7 @@ function App() {
             }
           />
 
-          {/* 🛠 Admin Management Pages */}
+          {/* 🛠 Admin Pages */}
           <Route
             path="/admin/dashboard"
             element={
@@ -115,7 +105,7 @@ function App() {
             }
           />
 
-          {/* 🧑‍🔧 Employee Tools */}
+          {/* 👨‍🔧 Employee Pages */}
           <Route
             path="/employee/dashboard"
             element={

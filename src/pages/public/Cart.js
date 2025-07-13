@@ -1,25 +1,43 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { useAuth } from '../../context/AuthContext';
 
 function Cart() {
   const [cartItems, setCartItems] = useState([]);
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
 
   useEffect(() => {
-    const storedCart = JSON.parse(localStorage.getItem('cart')) || [];
+    if (!currentUser) return;
+
+    const userCartKey = `cart_${currentUser.email}`;
+    const storedCart = JSON.parse(localStorage.getItem(userCartKey)) || [];
     setCartItems(storedCart);
-  }, []);
+  }, [currentUser]);
 
   const handleRemove = (id) => {
     const updated = cartItems.filter((item) => item.id !== id);
     setCartItems(updated);
-    localStorage.setItem('cart', JSON.stringify(updated));
+
+    const userCartKey = `cart_${currentUser.email}`;
+    localStorage.setItem(userCartKey, JSON.stringify(updated));
+
+    toast.success('🗑️ Item removed from cart');
   };
 
   const total = cartItems.reduce((sum, item) => {
     const price = parseFloat(item.price.replace(/[^\d.-]/g, '')) || 0;
     return sum + price;
   }, 0);
+
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen p-6 bg-white text-center text-black">
+        <h2 className="text-2xl font-semibold text-red-600">🔒 Please log in to view your cart.</h2>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-6 bg-white text-black">

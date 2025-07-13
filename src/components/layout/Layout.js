@@ -1,43 +1,39 @@
-// src/components/layout/Layout.js
 import React from 'react';
 import { useLocation } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
 import Navbar from './Navbar';
-import MobileNav from './MobileNav';
-import SearchBar from './SearchBar'; 
 import Hero from './Hero';
 import FeaturedSection from './FeaturedSection';
-
+import Footer from './Footer'; 
 
 function Layout({ children }) {
   const location = useLocation();
 
-  return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-black via-gray-800 to-blue-900 text-white animate-fadeIn">
+  const showTopSections = location.pathname === '/' || location.pathname === '/shop';
 
-      {/* Top Navigation */}
+  return (
+   <div className="min-h-screen w-full bg-gradient-to-br from-gray-950 via-slate-900 to-blue-950 text-white">
+      {/* 🔝 Navigation */}
       <Navbar />
 
-      {/* Optional Top Sections - only show on home/shop pages */}
-      {(location.pathname === '/' || location.pathname === '/shop') && (
+      {/* 🌟 Only show Hero & Featured on specific routes */}
+      {showTopSections && (
         <>
-          <SearchBar />
           <Hero />
           <FeaturedSection />
         </>
       )}
 
-      {/* Main Content */}
-      <main className="flex-grow p-4 sm:p-6 fade-in">
+      {/* 📦 Main content wrapper */}
+      <main className="flex-grow px-4 py-6 sm:px-6 overflow-y-auto">
         {children}
       </main>
 
-      {/* Mobile Bottom Navigation */}
-      <MobileNav currentPath={location.pathname} />
+      {/* 🔔 Toast notifications */}
+      <ToastContainer position="top-right" autoClose={3000} pauseOnHover={false} />
 
-      {/* Footer */}
-      <footer className="text-center text-sm text-white/60 p-4 border-t border-white/10">
-        <p>© 2025 FoneZone. All rights reserved.</p>
-      </footer>
+      {/* 🧩 Optional Footer if needed */}
+      <Footer />
     </div>
   );
 }

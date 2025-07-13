@@ -18,18 +18,18 @@ function Hero() {
     navigate('/shop');
   };
 
-  return (
-    <div className="relative overflow-hidden rounded-xl shadow-lg mb-6">
-      <video
-        className="absolute top-0 left-0 w-full h-full object-cover opacity-30"
-        src="/videos/fonezone-promo.mp4"
-        autoPlay
-        loop
-        muted
-        playsInline
-      />
+    return (
+      <div className="relative overflow-hidden rounded-b-xl shadow-lg mb-6 mt-0">
+        <video
+          className="absolute inset-0 w-full h-full object-cover opacity-30"
+          src="/videos/fonezone-promo.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+        />
 
-      <div className="relative z-10 text-center py-20 px-4 bg-gradient-to-r from-blue-800/70 via-indigo-800/70 to-purple-800/70 backdrop-blur-sm rounded-xl">
+      <div className="relative z-10 text-center py-20 px-4 bg-gradient-to-r from-blue-800/70 via-indigo-800/70 to-purple-800/70 backdrop-blur-sm rounded-b-xl">
         <h1 className="text-4xl md:text-5xl font-bold mb-3 animate-glow">
            Welcome to <span className="text-cyan-400">FoneZone</span>
         </h1>

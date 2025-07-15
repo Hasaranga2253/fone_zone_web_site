@@ -9,7 +9,8 @@ import Footer from './Footer';
 function Layout({ children }) {
   const location = useLocation();
 
-  const showTopSections = location.pathname === '/' || location.pathname === '/shop';
+ 
+  const showTopSections = location.pathname === '/' || location.pathname === '/home';
 
   return (
    <div className="min-h-screen w-full bg-gradient-to-br from-gray-950 via-slate-900 to-blue-950 text-white">

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import LoginModal from '../common/LoginModal';
 import Register from '../common/Register';
@@ -12,13 +12,13 @@ function Navbar() {
   const [redirectTo, setRedirectTo] = useState('/shop');
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
     const storedCart = JSON.parse(localStorage.getItem('cart')) || [];
     setCartCount(storedCart.length);
   }, []);
 
+  // 🔐 Redirect to protected page or open login
   const handleProtectedLink = (path) => {
     if (currentUser) {
       navigate(path);
@@ -28,32 +28,48 @@ function Navbar() {
     }
   };
 
-  const showSearchBar = currentUser && location.pathname === '/shop';
+  // 🎯 Navigate to correct dashboard
+  const handleDashboardRedirect = () => {
+    if (!currentUser) return;
+    const dashboards = {
+      admin: '/admin/dashboard',
+      user: '/user/dashboard',
+      employee: '/employee/dashboard',
+    };
+    const path = dashboards[currentUser.role] || '/';
+    navigate(path);
+  };
+
+  // 🚪 Logout and go to home
+  const handleLogout = () => {
+    logout();
+    localStorage.removeItem('adminLoggedIn');
+    navigate('/home');
+  };
 
   return (
     <>
-      <nav className="nav-blur fixed top-0 left-0 right-0 z-50 px-4 py-4 shadow-lg border-b border-white/10">
-        <div className="max-w-7xl mx-auto w-full flex items-center justify-between gap-4">
-          {/* 🔹 Left: Logo, SearchBar */}
-          <div className="flex items-center space-x-2">
+      <nav className="nav-blur fixed top-0 left-0 right-0 z-50 px-4 py-3 shadow-lg border-b border-white/10">
+        <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+          {/* 🔹 Logo + Search */}
+          <div className="flex items-center gap-4 flex-wrap">
             <img
               src="/images/FoneZoneLogo.png"
               alt="FoneZone Logo"
               className="h-10 w-10 rounded-md shadow-lg"
             />
             <h1 className="text-2xl font-bold gradient-text drop-shadow-md">FoneZone</h1>
-            {/* Show SearchBar near logo when logged in */}
-            {showSearchBar && <SearchBar />}
+            {currentUser && (
+              <div className="hidden md:block ml-2">
+                <SearchBar />
+              </div>
+            )}
           </div>
 
-          {/* 🔹 Center Navigation */}
-          <div className="hidden md:flex items-center space-x-6 text-sm sm:text-base">
+          {/* 🔹 Navigation Links */}
+          <div className="flex items-center gap-5 text-sm sm:text-base flex-wrap">
             <Link to="/home" className="hover:text-cyan-400 transition"><u>Home</u></Link>
-
-            <button onClick={() => handleProtectedLink('/shop')} className="hover:text-cyan-400 transition">
-              <u>Shop</u>
-            </button>
-
+            <button onClick={() => handleProtectedLink('/shop')} className="hover:text-cyan-400 transition"><u>Shop</u></button>
             <button onClick={() => handleProtectedLink('/cart')} className="relative hover:text-cyan-400 transition">
               <u>Cart</u>
               {cartCount > 0 && (
@@ -63,23 +79,28 @@ function Navbar() {
               )}
             </button>
 
+            {/* 🎯 Dashboard */}
+            {currentUser && (
+              <button
+                onClick={handleDashboardRedirect}
+                className="hover:text-cyan-400 transition underline"
+              >
+                {currentUser.role === 'admin' && 'Admin Dashboard'}
+                {currentUser.role === 'user' && 'User Dashboard'}
+                {currentUser.role === 'employee' && 'Employee Dashboard'}
+              </button>
+            )}
+
+            {/* 🔐 Auth Actions */}
             {currentUser ? (
               <>
-                {currentUser.role === 'employee' && (
-                  <Link to="/employee/repairs" className="hover:text-cyan-400 transition">
-                    Manage Repairs
-                  </Link>
-                )}
-                <span className="ml-2 font-medium text-yellow-200">
-                  {/* Display Username along with Role */}
-                  👤 {currentUser.username} <span className="text-xs uppercase">({currentUser.role})</span>
+                <span className="font-medium text-yellow-200 whitespace-nowrap">
+                  👤 {currentUser.username || currentUser.email}{' '}
+                  <span className="text-xs uppercase">({currentUser.role})</span>
                 </span>
                 <button
-                  onClick={() => {
-                    logout();
-                    navigate('/');
-                  }}
-                  className="ml-2 px-4 py-1 rounded-full bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 transition text-white text-sm"
+                  onClick={handleLogout}
+                  className="px-4 py-1 rounded-full bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 transition text-white text-sm"
                 >
                   Logout
                 </button>
@@ -87,23 +108,16 @@ function Navbar() {
             ) : (
               <button
                 onClick={() => setShowLogin(true)}
-                className="bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2 rounded-full hover:from-cyan-600 hover:to-blue-700 transition-all text-white"
+                className="bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2 rounded-full hover:from-cyan-600 hover:to-blue-700 transition text-white"
               >
                 Login
               </button>
             )}
           </div>
-
-          {/* 🔹 Mobile Menu Icon (optional dropdown) */}
-          <button className="md:hidden">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
         </div>
       </nav>
 
-      {/* 🔐 Auth Modals */}
+      {/* 🔐 Modals */}
       {showLogin && (
         <LoginModal
           onClose={() => setShowLogin(false)}

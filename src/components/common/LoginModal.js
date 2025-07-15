@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
@@ -9,29 +9,55 @@ function LoginModal({ onClose, redirectTo = '/', switchToRegister }) {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  // ✅ Inject default admin only once
+  useEffect(() => {
+    const existingUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
+    const adminExists = existingUsers.some(
+      user => user.email === 'admin@fonezone.com' && user.role === 'admin'
+    );
+    if (!adminExists) {
+      existingUsers.push({
+        email: 'admin@fonezone.com',
+        password: 'admin123',
+        role: 'admin',
+      });
+      localStorage.setItem('registeredUsers', JSON.stringify(existingUsers));
+    }
+  }, []);
+
   const handleLogin = (e) => {
     e.preventDefault();
 
     const users = JSON.parse(localStorage.getItem('registeredUsers')) || [];
     const existingUser = users.find(
-      (user) => user.email === email && user.password === password
+      user => user.email === email && user.password === password
     );
 
     if (!existingUser) {
-      toast.error('❌ Incorrect email or password.');
+      toast.error("❌ Incorrect email or password.");
       return;
     }
 
-    // Log in the user
     login(existingUser);
+
+    // ✅ Set adminLoggedIn flag for admin users
+    if (existingUser.role === 'admin') {
+      localStorage.setItem('adminLoggedIn', 'true');
+    }
+
     toast.success('✅ Login successful!');
     onClose();
 
-    // 🔁 Redirect to the appropriate dashboard based on the role
-    if (existingUser.role === 'employee') {
-      navigate('/employee/dashboard');
-        } else {
-      navigate(redirectTo || '/user/dashboard');
+    // 🔁 Redirect to role-specific dashboard or fallback path
+    switch (existingUser.role) {
+      case 'admin':
+        navigate('/admin/dashboard');
+        break;
+      case 'employee':
+        navigate('/employee/dashboard');
+        break;
+      default:
+        navigate(redirectTo || '/user/dashboard');
     }
   };
 

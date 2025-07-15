@@ -1,7 +1,5 @@
-// src/App.js
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-
 import Layout from './components/layout/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -18,7 +16,6 @@ import NewRepairRequest from './pages/user/NewRepairRequest';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminLogin from './pages/admin/AdminLogin'; // Admin Login page
 import ManageUsers from './pages/admin/ManageUsers';
 import ManageProducts from './pages/admin/ManageProducts';
 
@@ -27,85 +24,65 @@ import EmployeeDashboard from './pages/employee/EmployeeDashboard';
 import RepairJobs from './pages/employee/RepairJobs';
 
 function App() {
+  useEffect(() => {
+    const users = JSON.parse(localStorage.getItem('registeredUsers')) || [];
+    const adminExists = users.some(
+      (user) => user.email === 'admin@fonezone.com' && user.role === 'admin'
+    );
+    if (!adminExists) {
+      users.push({ email: 'admin@fonezone.com', password: 'admin123', role: 'admin' });
+      localStorage.setItem('registeredUsers', JSON.stringify(users));
+      console.log('✅ Default admin injected');
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white">
       <Router>
         <Routes>
-          {/* 🌐 Public Pages */}
+          {/* 🌐 Public Routes */}
           <Route path="/" element={<Layout><Home /></Layout>} />
+          <Route path="/home" element={<Layout><Home /></Layout>} />
           <Route path="/shop" element={<Layout><Shop /></Layout>} />
           <Route path="/cart" element={<Layout><Cart /></Layout>} />
           <Route path="/checkout" element={<Layout><Checkout /></Layout>} />
 
-          {/* 👤 User Pages */}
+          {/* 👤 User Protected Routes */}
           <Route
             path="/user/dashboard"
-            element={
-              <ProtectedRoute role="user">
-                <UserDashboard />
-              </ProtectedRoute>
-            }
+            element={<ProtectedRoute role="user"><UserDashboard /></ProtectedRoute>}
           />
           <Route
             path="/user/repairs"
-            element={
-              <ProtectedRoute role="user">
-                <RepairStatus />
-              </ProtectedRoute>
-            }
+            element={<ProtectedRoute role="user"><RepairStatus /></ProtectedRoute>}
           />
           <Route
             path="/user/repair/new"
-            element={
-              <ProtectedRoute role="user">
-                <NewRepairRequest />
-              </ProtectedRoute>
-            }
+            element={<ProtectedRoute role="user"><NewRepairRequest /></ProtectedRoute>}
           />
 
-          {/* 🛠 Admin Pages */}
-          <Route path="/admin" element={<AdminLogin />} /> {/* Always show Admin Login */}
+          {/* 🛠 Admin Protected Routes */}
           <Route
             path="/admin/dashboard"
-            element={
-              <ProtectedRoute role="admin">
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
+            element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>}
           />
           <Route
             path="/admin/users"
-            element={
-              <ProtectedRoute role="admin">
-                <ManageUsers />
-              </ProtectedRoute>
-            }
+            element={<ProtectedRoute role="admin"><ManageUsers /></ProtectedRoute>}
           />
           <Route
             path="/admin/products"
-            element={
-              <ProtectedRoute role="admin">
-                <ManageProducts />
-              </ProtectedRoute>
-            }
+            element={<ProtectedRoute role="admin"><ManageProducts /></ProtectedRoute>}
           />
 
-          {/* 👨‍🔧 Employee Pages */}
+          {/* 👨‍🔧 Employee Protected Routes */}
           <Route
             path="/employee/dashboard"
-            element={
-              <ProtectedRoute role="employee">
-                <EmployeeDashboard />
-              </ProtectedRoute>
-            }
+            element={<ProtectedRoute role="employee"><EmployeeDashboard /></ProtectedRoute>}
           />
           <Route
             path="/employee/repairs"
-            element={
-              <ProtectedRoute role="employee">
-                <RepairJobs />
-              </ProtectedRoute>
-            }
+            element={<ProtectedRoute role="employee"><RepairJobs /></ProtectedRoute>}
           />
         </Routes>
       </Router>

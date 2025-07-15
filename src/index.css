@@ -80,11 +80,6 @@ code {
     @apply bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 shadow-2xl;
   }
 
-  .glass-card-gradient {
-    @apply backdrop-blur-xl border border-white/15 rounded-3xl p-8 shadow-xl;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
-  }
-
   .glow-btn {
     @apply bg-gradient-to-r from-cyan-400 to-blue-500 text-black font-bold rounded-full px-6 py-3 transition-all duration-300;
     box-shadow: 0 0 8px theme('colors.cyan.400');

@@ -7,19 +7,13 @@ function RegisterModal({ onClose, switchToLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('user'); // Default to 'user'
-  const [username, setUsername] = useState(''); // New username field
   const navigate = useNavigate();
   const { login } = useAuth();
 
   const handleRegister = (e) => {
     e.preventDefault();
 
-    if (!username) {
-      toast.error('❌ Username is required.');
-      return;
-    }
-
-    const newUser = { email, password, role, username }; // Include username
+    const newUser = { email, password, role };
     const existingUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
 
     const isEmailUsed = existingUsers.find((user) => user.email === email);
@@ -59,15 +53,6 @@ function RegisterModal({ onClose, switchToLogin }) {
         </button>
         <h2 className="text-2xl font-bold mb-4 text-center">Create Account</h2>
         <form onSubmit={handleRegister} className="space-y-4">
-          {/* Username Input */}
-          <input
-            type="text"
-            placeholder="Username"
-            className="w-full border px-3 py-2 rounded"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
           <input
             type="email"
             placeholder="Email"

@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+// src/App.js
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import Layout from './components/layout/Layout';
@@ -17,6 +18,7 @@ import NewRepairRequest from './pages/user/NewRepairRequest';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminLogin from './pages/admin/AdminLogin'; // Admin Login page
 import ManageUsers from './pages/admin/ManageUsers';
 import ManageProducts from './pages/admin/ManageProducts';
 
@@ -25,24 +27,6 @@ import EmployeeDashboard from './pages/employee/EmployeeDashboard';
 import RepairJobs from './pages/employee/RepairJobs';
 
 function App() {
-  // ✅ Inject default admin on first load
-  useEffect(() => {
-    const existingUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
-    const adminExists = existingUsers.some(
-      user => user.email === 'admin@fonezone.com' && user.role === 'admin'
-    );
-
-    if (!adminExists) {
-      existingUsers.push({
-        email: 'admin@fonezone.com',
-        password: 'admin123',
-        role: 'admin',
-      });
-      localStorage.setItem('registeredUsers', JSON.stringify(existingUsers));
-      console.log('✅ Default admin injected');
-    }
-  }, []);
-
   return (
     <div className="min-h-screen bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white">
       <Router>
@@ -80,6 +64,7 @@ function App() {
           />
 
           {/* 🛠 Admin Pages */}
+          <Route path="/admin" element={<AdminLogin />} /> {/* Always show Admin Login */}
           <Route
             path="/admin/dashboard"
             element={

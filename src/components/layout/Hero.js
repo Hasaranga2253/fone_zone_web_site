@@ -38,14 +38,20 @@ function Hero() {
         </p>
 
       <button
-        onClick={handleShopNow}
-        className="bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-500 hover:to-blue-600 text-black font-semibold px-6 py-3 rounded-full shadow-xl hover:scale-105 transition-all duration-300 flex items-center gap-2 mx-auto ring-glow"
-      >
-        <FaMobileAlt className="text-pink-500 animate-bounce" />
-        Shop Now
-      </button>
+          onClick={handleShopNow}
+          className="relative overflow-hidden bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-500 hover:to-blue-600 text-black font-semibold px-6 py-3 rounded-full shadow-lg hover:shadow-cyan-400/40 transition-transform duration-300 hover:scale-105"
+        >
+          {/* 🌟 Glowing pulse ring */}
+          <span className="absolute -inset-1 z-0 rounded-full bg-gradient-to-r from-pink-500 via-cyan-500 to-purple-500 opacity-20 blur-2xl animate-pulse" />
 
-
+          {/* 📱 Icon + Label */}
+          <span className="relative z-10 flex items-center gap-2">
+            <span className="inline-block animate-bounce">
+              <FaMobileAlt className="text-pink-500" />
+            </span>
+            Shop Now
+          </span>
+        </button>
       </div>
     </div>
   );

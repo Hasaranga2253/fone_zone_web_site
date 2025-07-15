@@ -7,11 +7,12 @@ function SearchBar() {
   const [query, setQuery] = useState('');
   const [filteredResults, setFilteredResults] = useState([]);
   const [products, setProducts] = useState([]);
+
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ Hooks always on top
+  // ✅ Hooks ALWAYS on top
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem('products')) || [];
     setProducts(stored);
@@ -44,15 +45,16 @@ function SearchBar() {
 
   const handleClickResult = (item) => {
     if (currentUser) {
-      setQuery(item.name); // fill search bar with name
+      setQuery(item.name);
       navigate(`/shop#${item.id}`);
     }
   };
 
-  // ✅ Render nothing if not logged in or not on shop page
+  // ✅ Conditional rendering happens AFTER hooks
   const shouldRender = currentUser && location.pathname === '/shop';
+  if (!shouldRender) return null;
 
-  return shouldRender ? (
+  return (
     <div className="relative z-50 w-full flex flex-col items-center my-4">
       <div className="relative w-full max-w-md">
         <input
@@ -91,7 +93,7 @@ function SearchBar() {
         </div>
       )}
     </div>
-  ) : null;
+  );
 }
 
 export default SearchBar;

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import LoginModal from '../common/LoginModal';
 import Register from '../common/Register';
+import SearchBar from './SearchBar';
 
 function Navbar() {
   const [cartCount, setCartCount] = useState(0);
@@ -11,6 +12,7 @@ function Navbar() {
   const [redirectTo, setRedirectTo] = useState('/shop');
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const storedCart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -26,11 +28,13 @@ function Navbar() {
     }
   };
 
+  const showSearchBar = currentUser && location.pathname === '/shop';
+
   return (
     <>
-      <nav className="nav-blur fixed top-0 left-0 right-0 z-50 px-0 py-4 shadow-lg border-b border-white/10">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          {/* Left Logo & Brand */}
+      <nav className="nav-blur fixed top-0 left-0 right-0 z-50 px-4 py-4 shadow-lg border-b border-white/10">
+        <div className="max-w-7xl mx-auto w-full flex items-center justify-between gap-4">
+          {/* 🔹 Left: Logo, SearchBar */}
           <div className="flex items-center space-x-2">
             <img
               src="/images/FoneZoneLogo.png"
@@ -38,11 +42,13 @@ function Navbar() {
               className="h-10 w-10 rounded-md shadow-lg"
             />
             <h1 className="text-2xl font-bold gradient-text drop-shadow-md">FoneZone</h1>
+            {/* Show SearchBar near logo when logged in */}
+            {showSearchBar && <SearchBar />}
           </div>
 
-          {/* Center Navigation */}
+          {/* 🔹 Center Navigation */}
           <div className="hidden md:flex items-center space-x-6 text-sm sm:text-base">
-            <Link to="/" className="hover:text-cyan-400 transition"><u>Home</u></Link>
+            <Link to="/home" className="hover:text-cyan-400 transition"><u>Home</u></Link>
 
             <button onClick={() => handleProtectedLink('/shop')} className="hover:text-cyan-400 transition">
               <u>Shop</u>
@@ -65,7 +71,8 @@ function Navbar() {
                   </Link>
                 )}
                 <span className="ml-2 font-medium text-yellow-200">
-                  👤 {currentUser.email} <span className="text-xs uppercase">({currentUser.role})</span>
+                  {/* Display Username along with Role */}
+                  👤 {currentUser.username} <span className="text-xs uppercase">({currentUser.role})</span>
                 </span>
                 <button
                   onClick={() => {
@@ -78,18 +85,16 @@ function Navbar() {
                 </button>
               </>
             ) : (
-              <>
-                <button
-                  onClick={() => setShowLogin(true)}
-                  className="bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2 rounded-full hover:from-cyan-600 hover:to-blue-700 transition-all text-white"
-                >
-                  Login
-                </button>
-              </>
+              <button
+                onClick={() => setShowLogin(true)}
+                className="bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2 rounded-full hover:from-cyan-600 hover:to-blue-700 transition-all text-white"
+              >
+                Login
+              </button>
             )}
           </div>
 
-          {/* Mobile Menu Icon (optional dropdown can be added) */}
+          {/* 🔹 Mobile Menu Icon (optional dropdown) */}
           <button className="md:hidden">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />

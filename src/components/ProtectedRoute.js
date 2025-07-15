@@ -1,18 +1,25 @@
+// src/components/ProtectedRoute.js
+import React from 'react';
 import { Navigate } from 'react-router-dom';
 
-export default function ProtectedRoute({ children, role }) {
-  const user = JSON.parse(localStorage.getItem('user'));
+function ProtectedRoute({ children, role }) {
+  const currentUser = JSON.parse(localStorage.getItem('user')) || {};
+  const isAdminLoggedIn = localStorage.getItem('adminLoggedIn'); // Check if admin is logged in
 
-  if (!user) {
-    // Not logged in
-    return <Navigate to="/login" />;
+  // Protect Admin pages
+  if (role === 'admin' && !isAdminLoggedIn) {
+    return <Navigate to="/admin" />; // Redirect to admin login if not logged in
   }
 
-  if (role && user.role !== role) {
-    // Logged in, but wrong role
-    return <Navigate to="/login" />;
+  if (role === 'user' && !currentUser) {
+    return <Navigate to="/login" />; // Redirect to login if not logged in as user
   }
 
-  // Logged in and has correct role
-  return children;
+  if (role === 'employee' && !currentUser) {
+    return <Navigate to="/login" />; // Redirect to login if not logged in as employee
+  }
+
+  return children; // If authenticated, show the protected page
 }
+
+export default ProtectedRoute;

@@ -11,7 +11,6 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
-    
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -54,6 +53,16 @@ code {
   }
 }
 
+/* New glowing animation for section headings */
+@keyframes glowPulse {
+  0%, 100% {
+    text-shadow: 0 0 10px #00ffff, 0 0 20px #00bfff, 0 0 30px #1e90ff;
+  }
+  50% {
+    text-shadow: 0 0 20px #00ffff, 0 0 40px #00bfff, 0 0 60px #1e90ff;
+  }
+}
+
 /* === Utility Layer === */
 @layer utilities {
   .fade-in {
@@ -72,8 +81,19 @@ code {
     animation: slideUp 0.7s ease-out forwards;
   }
 
+  /* Adds glow effect to headings */
+  .animate-glow {
+    animation: glowPulse 2s ease-in-out infinite alternate;
+  }
+
+  /* Gradient text effect */
   .gradient-text {
     @apply bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent;
+  }
+
+  /* Glassy card with gradient edge */
+  .glass-card-gradient {
+    @apply bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-lg border border-white/20 rounded-2xl p-6 shadow-2xl;
   }
 
   .glass-card {
@@ -108,7 +128,17 @@ code {
   }
 
   .btn-secondary {
-     @apply glow-btn hover:shadow-lg hover:shadow-cyan-400/60;
+    @apply glow-btn hover:shadow-lg hover:shadow-cyan-400/60 bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500 text-white font-bold rounded-full px-6 py-3 transition-all duration-300;
+  }
+
+  .btn-wishlist {
+    @apply bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500 text-white font-bold rounded-full px-6 py-3 transition-all duration-300;
+    box-shadow: 0 0 8px theme('colors.cyan.400');
+  }
+
+  .btn-wishlist:hover {
+    @apply scale-105;
+    box-shadow: 0 0 12px theme('colors.cyan.400'), 0 0 24px theme('colors.cyan.400');
   }
 
   .card-neon {
@@ -145,4 +175,5 @@ code {
   .nav-link.active::after {
     width: 100%;
   }
+  
 }

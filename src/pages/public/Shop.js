@@ -1,96 +1,540 @@
+// src/pages/public/Shop.js
 import React, { useEffect, useState } from 'react';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import {
+  FaCartPlus,
+  FaHeart,
+  FaSearch,
+  FaStar,
+  FaFilter,
+  FaTimes,
+  FaCheckCircle,
+  FaMobile,
+} from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
 
 function Shop() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [quickView, setQuickView] = useState(null);
+  const [activeCategory, setActiveCategory] = useState('All');
+  const [flyingHearts, setFlyingHearts] = useState([]);
+  const [showFilters, setShowFilters] = useState(false);
+  const [priceRange, setPriceRange] = useState([0, 500000]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [notifyMessage, setNotifyMessage] = useState('');
+  const [userRatings, setUserRatings] = useState({});
+  const productsPerPage = 12;
 
-  useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem('products')) || [];
-    setTimeout(() => {
-      setProducts(stored);
-      setLoading(false);
-    }, 800); // Optional simulated delay
-  }, []);
+  const categories = ['All', 'Phones', 'Accessories', 'Tablets', 'Repair Items'];
+  const fallbackImage = '/images/fallback.jpg';
 
-  const handleAddToCart = (product) => {
-    const existingCart = JSON.parse(localStorage.getItem('cart')) || [];
-    const updatedCart = [...existingCart, { ...product, quantity: 1 }];
-    localStorage.setItem('cart', JSON.stringify(updatedCart));
-    alert(`${product.name} added to cart!`);
-  };
+  // Load products and ratings
+  const loadProducts = () => {
+    const storedProducts = JSON.parse(localStorage.getItem('products')) || [];
+    setProducts(storedProducts);
 
-  const handleProtectedNavigation = (path) => {
     if (currentUser) {
-      navigate(path);
-    } else {
-      alert('You must be logged in to access this.');
+      const storedRatings = JSON.parse(localStorage.getItem(`ratings_${currentUser.email}`)) || {};
+      setUserRatings(storedRatings);
     }
   };
 
-  if (loading) return <LoadingSpinner />;
+  useEffect(() => {
+    loadProducts();
+    const onStorageChange = () => loadProducts();
+    window.addEventListener('storage', onStorageChange);
+    return () => window.removeEventListener('storage', onStorageChange);
+  }, [currentUser]);
+
+  const filteredProducts = products.filter(
+    (p) =>
+      (activeCategory === 'All' || p.category === activeCategory) &&
+      p.price >= priceRange[0] &&
+      p.price <= priceRange[1]
+  );
+
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+  const displayedProducts = filteredProducts.slice(
+    (currentPage - 1) * productsPerPage,
+    currentPage * productsPerPage
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeCategory, priceRange]);
+
+  const formatPrice = (price) => `Rs. ${price.toLocaleString('en-US')}`;
+
+  const showNotification = (message) => {
+    setNotifyMessage(message);
+    setTimeout(() => setNotifyMessage(''), 3000);
+  };
+
+  const handleAddToCart = (product) => {
+    if (!currentUser) return alert('Please log in to add to your cart.');
+    const key = `cart_${currentUser.email}`;
+    const cart = JSON.parse(localStorage.getItem(key)) || [];
+    const exists = cart.find((i) => i.id === product.id);
+    const updated = exists
+      ? cart.map((i) =>
+          i.id === product.id ? { ...i, quantity: (i.quantity || 1) + 1 } : i
+        )
+      : [...cart, { ...product, quantity: 1 }];
+    localStorage.setItem(key, JSON.stringify(updated));
+    showNotification(`${product.name} has been added to your cart!`);
+  };
+
+  const handleAddToWishlist = (product, e) => {
+    if (!currentUser) return alert('Please log in to save to wishlist.');
+    const key = `wishlist_${currentUser.email}`;
+    const wishlist = JSON.parse(localStorage.getItem(key)) || [];
+    if (!wishlist.find((i) => i.id === product.id)) {
+      localStorage.setItem(key, JSON.stringify([...wishlist, product]));
+      const rect = e.currentTarget.getBoundingClientRect();
+      const hearts = Array.from({ length: 5 }, (_, i) => ({
+        id: `${Date.now()}-${i}`,
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+        size: Math.random() * 20 + 10,
+      }));
+      setFlyingHearts(hearts);
+      setTimeout(() => setFlyingHearts([]), 1000);
+      showNotification(`${product.name} has been added to your wishlist!`);
+    }
+  };
+
+  const handleRateProduct = (productId, rating) => {
+    if (!currentUser) return alert('Please log in to rate products.');
+    const updatedRatings = { ...userRatings, [productId]: rating };
+    setUserRatings(updatedRatings);
+    localStorage.setItem(`ratings_${currentUser.email}`, JSON.stringify(updatedRatings));
+    showNotification(`You rated this product ${rating} star${rating > 1 ? 's' : ''}!`);
+  };
+
+  const getAverageRating = (productId, defaultRating) => {
+    let sum = 0;
+    let count = 0;
+    // Aggregate ratings from all users (optional, here only currentUser for simplicity)
+    if (userRatings[productId]) {
+      sum += userRatings[productId];
+      count++;
+    }
+    return count > 0 ? (sum / count).toFixed(1) : defaultRating || 0;
+  };
+
+  const getDaysInMonth = (y, m) => new Date(y, m + 1, 0).getDate();
+const getFirstDayOfMonth = (y, m) => new Date(y, m, 1).getDay();
+const formatDate = (d) => d.toISOString().split('T')[0];
+
+const prevMonth = () => setCurrentDate((p) => new Date(p.getFullYear(), p.getMonth() - 1, 1));
+const nextMonth = () => setCurrentDate((p) => new Date(p.getFullYear(), p.getMonth() + 1, 1));
+
+const renderCalendarDays = () => {
+  const y = currentDate.getFullYear();
+  const m = currentDate.getMonth();
+  const days = [];
+  const daysInMonth = getDaysInMonth(y, m);
+  const firstDay = getFirstDayOfMonth(y, m);
+
+  for (let i = 0; i < firstDay; i++) {
+    days.push(<div key={`empty-${i}`} className="p-2 opacity-0" />);
+  }
+
+  for (let i = 1; i <= daysInMonth; i++) {
+    const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+    const dayEvents = events.filter(e => e.date === dateStr);
+    const today = formatDate(new Date()) === dateStr;
+
+    days.push(
+      <motion.div
+        key={i}
+        whileHover={{ scale: 1.08 }}
+        className={`relative p-2 rounded-lg text-center cursor-pointer transition-all duration-200
+          ${today ? 'ring-2 ring-cyan-400 shadow-lg' : ''}
+          ${dayEvents.length > 0 ? 'bg-gray-800/70 backdrop-blur-lg' : 'hover:bg-gray-800/50'}`}
+      >
+        <div className="font-semibold text-white">{i}</div>
+        {dayEvents.length > 0 && (
+          <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-1">
+            {dayEvents.map(event => (
+              <div key={event.id} className={`w-2 h-2 rounded-full bg-gradient-to-r ${event.color} animate-pulse`} />
+            ))}
+          </div>
+        )}
+      </motion.div>
+    );
+  }
+  return days;
+};
+
+  // Calendar State & Events
+const [currentDate, setCurrentDate] = useState(new Date());
+const [events] = useState([
+  { id: 1, date: '2025-08-02', title: 'Flash Sale - 30% Off', type: 'sale', color: 'from-cyan-500 to-blue-600' },
+  { id: 2, date: '2025-08-08', title: 'Repair Camp - Free Diagnostics', type: 'repair', color: 'from-amber-500 to-orange-600' },
+  { id: 3, date: '2025-08-15', title: 'New Phone Launch Event', type: 'launch', color: 'from-purple-500 to-pink-600' },
+  { id: 4, date: '2025-08-20', title: 'Accessory Bundle Deals', type: 'bundle', color: 'from-green-500 to-emerald-600' },
+  { id: 5, date: '2025-08-25', title: 'Trade-in Bonus Week', type: 'trade', color: 'from-red-500 to-pink-600' },
+]);
 
   return (
-    <div className="relative w-full min-h-screen overflow-hidden text-white">
-      {/* 🌌 Fullscreen Gradient Background */}
-      <div
-        className="absolute top-0 left-0 w-full h-full bg-no-repeat bg-cover bg-center opacity-20 z-0"
-        style={{ backgroundImage: "url('/images/fallback.jpg')" }}
-      />
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 text-white relative fade-in">
+      {/* Floating hearts animation */}
+      <AnimatePresence>
+        {flyingHearts.map((heart) => (
+          <motion.div
+            key={heart.id}
+            className="absolute text-pink-500 z-50 pointer-events-none"
+            style={{ top: heart.y, left: heart.x, fontSize: `${heart.size}px` }}
+            initial={{ opacity: 1, scale: 0.5, x: '-50%', y: '-50%' }}
+            animate={{
+              opacity: 0,
+              scale: 1.5,
+              y: '-200%',
+              x: `${Math.random() * 100 - 50}%`,
+            }}
+            transition={{ duration: 1, ease: 'easeOut' }}
+          >
+            <FaHeart />
+          </motion.div>
+        ))}
+      </AnimatePresence>
 
-      {/* 🎨 Optional Decorative Overlays */}
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,...')] opacity-5 z-0" />
-      <div className="absolute top-10 left-10 w-24 h-24 bg-cyan-400/10 rounded-full blur-2xl animate-pulse z-0" />
-      <div className="absolute bottom-10 right-10 w-32 h-32 bg-pink-400/10 rounded-full blur-2xl animate-pulse delay-1000 z-0" />
+      {/* Notification */}
+      <AnimatePresence>
+        {notifyMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 z-50"
+          >
+            <FaCheckCircle /> <span>{notifyMessage}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* 💎 Foreground Content */}
-      <div className="relative z-10 flex items-center justify-center min-h-screen p-6">
-        <div className="glass-card-gradient text-center max-w-3xl w-full p-10 rounded-xl shadow-lg backdrop-blur-md bg-white/5 border border-white/10 animate-fadeIn">
-          <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-6 gradient-text fade-in">
-            Mobile Shop
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {products.length === 0 ? (
-              <p className="text-center col-span-full text-gray-500">
-                No products available.
-              </p>
-            ) : (
-              products.map((product) => (
-                <div
-                  key={product.id}
-                  className="card-neon text-center hover:scale-105 transition-transform duration-300"
-                >
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="h-40 w-full object-contain mb-4 rounded"
-                  />
-                  <h3 className="text-xl font-semibold">{product.name}</h3>
-                  <p className="text-lg text-green-700 mt-1">{product.price}</p>
-                  <button
-                    onClick={() => handleAddToCart(product)}
-                    className="btn-primary mt-4 w-full"
-                  >
-                    ➕ Add to Cart
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-
-          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button
-              onClick={() => handleProtectedNavigation('/checkout')}
-              className="btn-primary flex items-center gap-2 mt-6"
+      {/* Quick View Modal with Rating */}
+      <AnimatePresence>
+        {quickView && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 20, opacity: 0 }}
+              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl border border-gray-700 w-full max-w-2xl overflow-hidden shadow-2xl"
             >
-              Proceed to Checkout
+              <button
+                onClick={() => setQuickView(null)}
+                className="absolute top-4 right-4 z-10 bg-gray-700 hover:bg-gray-600 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+              >
+                <FaTimes className="text-gray-300" />
+              </button>
+              <div className="grid grid-cols-1 md:grid-cols-2">
+                {/* Product Image */}
+                <div className="relative bg-gradient-to-br from-gray-900 to-gray-950 p-8 flex items-center justify-center">
+                  <img
+                    src={quickView.image || fallbackImage}
+                    alt={quickView.name}
+                    className="h-56 object-contain transition-transform duration-500 hover:scale-105"
+                  />
+                  <div className="absolute top-4 left-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-3 py-1 rounded-full text-xs font-bold">
+                    {quickView.category}
+                  </div>
+                </div>
+                {/* Product Info */}
+                <div className="p-6">
+                  <h2 className="text-2xl font-bold mb-2">{quickView.name}</h2>
+                  {/* User Rating Selector */}
+                  <div className="flex items-center mb-4 gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <FaStar
+                        key={star}
+                        onClick={() => handleRateProduct(quickView.id, star)}
+                        className={`cursor-pointer ${
+                          star <= (userRatings[quickView.id] || 0)
+                            ? 'text-yellow-400'
+                            : 'text-gray-600'
+                        }`}
+                      />
+                    ))}
+                    <span className="text-gray-400 text-sm">
+                      Your Rating: {userRatings[quickView.id] || 'N/A'}
+                    </span>
+                  </div>
+                  <p className="text-cyan-400 text-2xl font-bold mb-4">
+                    {formatPrice(quickView.price)}
+                  </p>
+                  <div className="mb-6">
+                    <h3 className="text-gray-300 font-medium mb-2">Description</h3>
+                    <p className="text-gray-400">{quickView.description || 'No description available.'}</p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => {
+                        handleAddToCart(quickView);
+                        setQuickView(null);
+                      }}
+                      className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-lg flex items-center justify-center gap-2"
+                    >
+                      <FaCartPlus /> Add to Cart
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={(e) => {
+                        handleAddToWishlist(quickView, e);
+                        setQuickView(null);
+                      }}
+                      className="flex-1 py-3 bg-gradient-to-r from-pink-600 to-rose-700 rounded-lg flex items-center justify-center gap-2"
+                    >
+                      <FaHeart /> Add to Wishlist
+                    </motion.button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Hero Section */}
+      <section className="bg-gradient-to-r from-gray-800 to-gray-900 text-center py-16 border-b border-gray-700">
+        <h1 className="text-4xl font-bold gradient-text ">FoneZone Shop</h1>
+        <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+          Explore our premium smartphones, tablets, accessories, and repair services.
+        </p>
+      </section>
+
+      {/* Price Filter */}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-gray-800/80 backdrop-blur-md border-b border-gray-700 p-4"
+          >
+            <div className="max-w-7xl mx-auto">
+              <h3 className="text-lg font-semibold mb-3">Price Range</h3>
+              <input
+                type="range"
+                min="0"
+                max="500000"
+                step="10000"
+                value={priceRange[1]}
+                onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
+                className="w-full accent-blue-500"
+              />
+              <div className="text-gray-400 text-sm mt-1">
+                Showing products up to {formatPrice(priceRange[1])}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+        {/* Left Sidebar */}
+<div className="w-full lg:w-72 flex-shrink-0 space-y-6">
+
+  {/* Price Filter Button */}
+  <button
+    onClick={() => setShowFilters(!showFilters)}
+    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-700 rounded-lg text-white font-semibold"
+  >
+    <FaFilter /> Price Filter
+  </button>
+
+  {/* Wishlist Button */}
+  <button
+    onClick={() => (currentUser ? navigate('/wishlist') : alert('Log in to view wishlist'))}
+    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-pink-600 to-rose-700 rounded-lg text-white font-semibold"
+  >
+    <FaHeart /> Wishlist
+  </button>
+
+  {/* Vertical Categories */}
+  <div className="space-y-2">
+    {categories.map((cat) => (
+      <motion.button
+        key={cat}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setActiveCategory(cat)}
+        className={`w-full text-left px-4 py-2 rounded-lg font-medium transition-all ${
+          activeCategory === cat
+            ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-md'
+            : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+        }`}
+      >
+        {cat}
+      </motion.button>
+    ))}
+  </div>
+
+  {/* Collapsible Price Range Slider */}
+  <AnimatePresence>
+    {showFilters && (
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        className="bg-gray-800/80 backdrop-blur-md border border-gray-700 p-4 rounded-lg"
+      >
+        <h3 className="text-lg font-semibold mb-3">Price Range</h3>
+        <input
+          type="range"
+          min="0"
+          max="500000"
+          step="10000"
+          value={priceRange[1]}
+          onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
+          className="w-full accent-blue-500"
+        />
+        <div className="text-gray-400 text-sm mt-1">
+          Showing products up to {formatPrice(priceRange[1])}
+        </div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+</div>
+
+      {/* Product Grid */}
+      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 flex-col lg:flex-row gap-8 flex">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {displayedProducts.length === 0 ? (
+            <div className="col-span-full text-center py-16 text-gray-400">
+              No products found. Please add products from the Admin panel.
+            </div>
+          ) : (
+            displayedProducts.map((product) => {
+              const avgRating = getAverageRating(product.id, product.rating);
+              return (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-lg group hover:shadow-xl transition"
+                >
+                  <div className="relative h-56 flex items-center justify-center p-4 bg-gray-900">
+                    <img
+                      src={product.image || fallbackImage}
+                      alt={product.name}
+                      className="h-44 object-contain transition-transform group-hover:scale-110"
+                      onError={(e) => (e.target.src = fallbackImage)}
+                    />
+                    <div className="absolute top-4 right-4 flex flex-col gap-2">
+                      <button
+                        onClick={(e) => handleAddToWishlist(product, e)}
+                        className="bg-gray-800/70 hover:bg-pink-600 w-10 h-10 rounded-full flex items-center justify-center"
+                      >
+                        <FaHeart className="text-pink-400" />
+                      </button>
+                      <button
+                        onClick={() => setQuickView(product)}
+                        className="bg-gray-800/70 hover:bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center"
+                      >
+                        <FaSearch className="text-blue-400" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <div className="flex items-center mb-1">
+                      {[...Array(5)].map((_, i) => (
+                        <FaStar
+                          key={i}
+                          className={
+                            i < Math.floor(avgRating) ? 'text-yellow-400' : 'text-gray-600'
+                          }
+                        />
+                      ))}
+                      <span className="ml-2 text-gray-400 text-sm">{avgRating}</span>
+                    </div>
+                    <h3 className="font-bold text-lg truncate">{product.name}</h3>
+                    <p className="text-cyan-400 font-bold text-xl mb-3">
+                      {formatPrice(product.price)}
+                    </p>
+                    <button
+                      onClick={() => handleAddToCart(product)}
+                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 py-2 rounded-lg flex items-center justify-center gap-2"
+                    >
+                      <FaCartPlus /> Add to Cart
+                    </button>
+                  </div>
+                </motion.div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-4 mt-8">
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+              className={`px-4 py-2 rounded-lg ${
+                currentPage === 1
+                  ? 'bg-gray-600 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600'
+              }`}
+            >
+              Previous
+            </button>
+            <span className="text-gray-300">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+              className={`px-4 py-2 rounded-lg ${
+                currentPage === totalPages
+                  ? 'bg-gray-600 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600'
+              }`}
+            >
+              Next
             </button>
           </div>
+        )}
+        {/* Calendar Sidebar */}
+        <div className="w-full lg:w-80 pl-0 lg:pl-6 sticky top-24 h-fit">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-br from-black via-gray-800 to-blue-900 border border-gray-700/60 rounded-2xl p-5 shadow-2xl backdrop-blur-md"
+          >
+            {/* Calendar Header */}
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-cyan-300">Event Calendar</h3>
+              <div className="flex gap-2">
+                <button onClick={prevMonth} className="p-2 bg-gray-800 hover:bg-gray-700 rounded-full">{'<'}</button>
+                <button onClick={nextMonth} className="p-2 bg-gray-800 hover:bg-gray-700 rounded-full">{'>'}</button>
+              </div>
+            </div>
+            <div className="text-center text-lg font-semibold text-gray-200 mb-3">
+              {currentDate.toLocaleString('default', { month: 'long' })} {currentDate.getFullYear()}
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="grid grid-cols-7 gap-1 text-center text-xs text-gray-400">
+              {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => <div key={d}>{d}</div>)}
+            </div>
+            <div className="grid grid-cols-7 gap-1 text-sm mt-2">
+              {renderCalendarDays()}
+            </div>
+          </motion.div>
         </div>
       </div>
     </div>

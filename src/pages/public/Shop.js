@@ -126,61 +126,6 @@ function Shop() {
     return count > 0 ? (sum / count).toFixed(1) : defaultRating || 0;
   };
 
-  const getDaysInMonth = (y, m) => new Date(y, m + 1, 0).getDate();
-const getFirstDayOfMonth = (y, m) => new Date(y, m, 1).getDay();
-const formatDate = (d) => d.toISOString().split('T')[0];
-
-const prevMonth = () => setCurrentDate((p) => new Date(p.getFullYear(), p.getMonth() - 1, 1));
-const nextMonth = () => setCurrentDate((p) => new Date(p.getFullYear(), p.getMonth() + 1, 1));
-
-const renderCalendarDays = () => {
-  const y = currentDate.getFullYear();
-  const m = currentDate.getMonth();
-  const days = [];
-  const daysInMonth = getDaysInMonth(y, m);
-  const firstDay = getFirstDayOfMonth(y, m);
-
-  for (let i = 0; i < firstDay; i++) {
-    days.push(<div key={`empty-${i}`} className="p-2 opacity-0" />);
-  }
-
-  for (let i = 1; i <= daysInMonth; i++) {
-    const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-    const dayEvents = events.filter(e => e.date === dateStr);
-    const today = formatDate(new Date()) === dateStr;
-
-    days.push(
-      <motion.div
-        key={i}
-        whileHover={{ scale: 1.08 }}
-        className={`relative p-2 rounded-lg text-center cursor-pointer transition-all duration-200
-          ${today ? 'ring-2 ring-cyan-400 shadow-lg' : ''}
-          ${dayEvents.length > 0 ? 'bg-gray-800/70 backdrop-blur-lg' : 'hover:bg-gray-800/50'}`}
-      >
-        <div className="font-semibold text-white">{i}</div>
-        {dayEvents.length > 0 && (
-          <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-1">
-            {dayEvents.map(event => (
-              <div key={event.id} className={`w-2 h-2 rounded-full bg-gradient-to-r ${event.color} animate-pulse`} />
-            ))}
-          </div>
-        )}
-      </motion.div>
-    );
-  }
-  return days;
-};
-
-  // Calendar State & Events
-const [currentDate, setCurrentDate] = useState(new Date());
-const [events] = useState([
-  { id: 1, date: '2025-08-02', title: 'Flash Sale - 30% Off', type: 'sale', color: 'from-cyan-500 to-blue-600' },
-  { id: 2, date: '2025-08-08', title: 'Repair Camp - Free Diagnostics', type: 'repair', color: 'from-amber-500 to-orange-600' },
-  { id: 3, date: '2025-08-15', title: 'New Phone Launch Event', type: 'launch', color: 'from-purple-500 to-pink-600' },
-  { id: 4, date: '2025-08-20', title: 'Accessory Bundle Deals', type: 'bundle', color: 'from-green-500 to-emerald-600' },
-  { id: 5, date: '2025-08-25', title: 'Trade-in Bonus Week', type: 'trade', color: 'from-red-500 to-pink-600' },
-]);
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 text-white relative fade-in">
       {/* Floating hearts animation */}
@@ -309,14 +254,51 @@ const [events] = useState([
         )}
       </AnimatePresence>
 
-      {/* Hero Section */}
+      {/* Hero Section (Full-width at the top) */}
       <section className="bg-gradient-to-r from-gray-800 to-gray-900 text-center py-16 border-b border-gray-700">
-        <h1 className="text-4xl font-bold gradient-text ">FoneZone Shop</h1>
+        <h1 className="text-4xl font-extrabold gradient-text mb-4">FoneZone Shop</h1>
         <p className="text-gray-400 text-lg max-w-2xl mx-auto">
           Explore our premium smartphones, tablets, accessories, and repair services.
         </p>
-      </section>
+      
 
+      {/* Filters & Categories */}
+      <aside className="w-64 sticky top-24 h-fit bg-gray-900/80 border border-gray-800 rounded-xl p-4 hidden md:block ">
+        <div className="max-w-7xl mx-auto flex justify-between items-center gap-4">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-2 w-full px-4 py-2 mb-4 bg-gradient-to-r from-indigo-600 to-purple-700 rounded-lg"
+          >
+            <FaFilter /> Price Filter
+          </button>
+          <button
+            onClick={() => (currentUser ? navigate('/wishlist') : alert('Log in to view wishlist'))}
+            className="flex items-center justify-center gap-2 w-full px-4 py-2 mb-6 bg-gradient-to-r from-pink-600 to-rose-700 rounded-lg shadow-md"
+          >
+            <FaHeart /> <span className="hidden md:inline">Wishlist</span>
+          </button>
+        </div>
+        
+{/* Categories as Vertical Buttons */}
+    <div className="flex flex-col gap-3">
+      {categories.map((cat) => (
+        <motion.button
+          key={cat}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setActiveCategory(cat)}
+          className={`w-full text-left px-4 py-2 rounded-lg font-medium transition-all ${
+            activeCategory === cat
+              ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-lg'
+              : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+          }`}
+        >
+          {cat}
+        </motion.button>
+      ))}
+    </div>
+  </aside>
+</section>
       {/* Price Filter */}
       <AnimatePresence>
         {showFilters && (
@@ -345,77 +327,12 @@ const [events] = useState([
         )}
       </AnimatePresence>
 
-        {/* Left Sidebar */}
-<div className="w-full lg:w-72 flex-shrink-0 space-y-6">
-
-  {/* Price Filter Button */}
-  <button
-    onClick={() => setShowFilters(!showFilters)}
-    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-700 rounded-lg text-white font-semibold"
-  >
-    <FaFilter /> Price Filter
-  </button>
-
-  {/* Wishlist Button */}
-  <button
-    onClick={() => (currentUser ? navigate('/wishlist') : alert('Log in to view wishlist'))}
-    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-pink-600 to-rose-700 rounded-lg text-white font-semibold"
-  >
-    <FaHeart /> Wishlist
-  </button>
-
-  {/* Vertical Categories */}
-  <div className="space-y-2">
-    {categories.map((cat) => (
-      <motion.button
-        key={cat}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => setActiveCategory(cat)}
-        className={`w-full text-left px-4 py-2 rounded-lg font-medium transition-all ${
-          activeCategory === cat
-            ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-md'
-            : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-        }`}
-      >
-        {cat}
-      </motion.button>
-    ))}
-  </div>
-
-  {/* Collapsible Price Range Slider */}
-  <AnimatePresence>
-    {showFilters && (
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        className="bg-gray-800/80 backdrop-blur-md border border-gray-700 p-4 rounded-lg"
-      >
-        <h3 className="text-lg font-semibold mb-3">Price Range</h3>
-        <input
-          type="range"
-          min="0"
-          max="500000"
-          step="10000"
-          value={priceRange[1]}
-          onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
-          className="w-full accent-blue-500"
-        />
-        <div className="text-gray-400 text-sm mt-1">
-          Showing products up to {formatPrice(priceRange[1])}
-        </div>
-      </motion.div>
-    )}
-  </AnimatePresence>
-</div>
-
       {/* Product Grid */}
-      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 flex-col lg:flex-row gap-8 flex">
+      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 flex-1">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {displayedProducts.length === 0 ? (
             <div className="col-span-full text-center py-16 text-gray-400">
-              No products found. Please add products from the Admin panel.
+              No products found. 
             </div>
           ) : (
             displayedProducts.map((product) => {
@@ -508,34 +425,6 @@ const [events] = useState([
             </button>
           </div>
         )}
-        {/* Calendar Sidebar */}
-        <div className="w-full lg:w-80 pl-0 lg:pl-6 sticky top-24 h-fit">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-br from-black via-gray-800 to-blue-900 border border-gray-700/60 rounded-2xl p-5 shadow-2xl backdrop-blur-md"
-          >
-            {/* Calendar Header */}
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-cyan-300">Event Calendar</h3>
-              <div className="flex gap-2">
-                <button onClick={prevMonth} className="p-2 bg-gray-800 hover:bg-gray-700 rounded-full">{'<'}</button>
-                <button onClick={nextMonth} className="p-2 bg-gray-800 hover:bg-gray-700 rounded-full">{'>'}</button>
-              </div>
-            </div>
-            <div className="text-center text-lg font-semibold text-gray-200 mb-3">
-              {currentDate.toLocaleString('default', { month: 'long' })} {currentDate.getFullYear()}
-            </div>
-
-            {/* Calendar Grid */}
-            <div className="grid grid-cols-7 gap-1 text-center text-xs text-gray-400">
-              {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => <div key={d}>{d}</div>)}
-            </div>
-            <div className="grid grid-cols-7 gap-1 text-sm mt-2">
-              {renderCalendarDays()}
-            </div>
-          </motion.div>
-        </div>
       </div>
     </div>
   );

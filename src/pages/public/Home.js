@@ -8,6 +8,8 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/pagination';
 import { Pagination, Autoplay } from 'swiper/modules';
+import { Carousel, Card } from '../../components/ui/AppleCardsCarousel';
+
 
 function Home() {
   const { currentUser } = useAuth();
@@ -39,11 +41,64 @@ function Home() {
     { id: 3, image: '/images/Apple MacBook Air.jpg', name: 'Apple MacBook Air', price: 'LKR 550,000', link: '/shop' },
     { id: 4, image: '/images/Apple-AirPods-Pro.png', name: 'Apple AirPods Pro', price: 'LKR 85,000', link: '/shop' },
   ];
+// Carousel Items Data (AppleCardsCarousel)
+const carouselItems = [
+  {
+    src: "/images/ADD1.png",
+    title: "Enjoy a sleek design with A14 Bionic chip for work & play.",
+    category: "Apple",
+    content: (
+      <p className="text-gray-600 dark:text-gray-300">
+        Enjoy a sleek design with A14 Bionic chip for work & play.
+      </p>
+    ),
+  },
+  {
+    src: "/images/ADD2.avif",
+    title: "Launching the new Apple Vision Pro.",
+    category: "Product",
+    content: (
+      <p className="text-gray-600 dark:text-gray-300">
+        Launching the new Apple Vision Pro.
+      </p>
+    ),
+  },
+  {
+    src: "/images/ADD3.png",
+    title: "JBL Speakers",
+    category: "Audio",
+    content: (
+      <p className="text-gray-600 dark:text-gray-300">
+        Rich sound and portability for every occasion.
+      </p>
+    ),
+  },
+  {
+    src: "/images/ADD4.avif",
+    title: "Photography just got better with the new iPhone 15 Pro.",
+    category: "Camera",
+    content: (
+      <p className="text-gray-600 dark:text-gray-300">
+        Photography just got better with the new iPhone 15 Pro.
+      </p>
+    ),
+  },
+  {
+    src: "/images/ADD5.png",
+    title: "Galaxy Watch Ultra",
+    category: "Wearable",
+    content: (
+      <p className="text-gray-600 dark:text-gray-300">
+        Experience the future of wearable technology.
+      </p>
+    ),
+  },
+];
+
 
   return (
     
     <>
-    
     
       <div className="relative w-full min-h-screen overflow-hidden text-white -mt-25 rounded-t-lg fade-in">
 
@@ -67,41 +122,16 @@ function Home() {
     {/* You can put content here if needed */}
   </div>
 </section>
+        {/* Apple Cards Carousel (Place here) */}
+<div className="relative z-10 max-w-7xl mx-auto py-12">
+  <h3 className="text-3xl font-bold text-white mb-6">Explore More</h3>
+  <Carousel
+    items={carouselItems.map((card, idx) => (
+      <Card key={idx} card={card} index={idx} layout />
+    ))}
+  />
 
-        {/* Featured Products Carousel */}
-        <div className="relative z-10 max-w-7xl mx-auto py-12 px-6 mt-16">
-          <Swiper
-            slidesPerView={1}
-            spaceBetween={20}
-            pagination={{ clickable: true }}
-            autoplay={{ delay: 3000, disableOnInteraction: false }}
-            breakpoints={{
-              640: { slidesPerView: 2 },
-              1024: { slidesPerView: 4 },
-            }}
-            modules={[Pagination, Autoplay]}
-            className="w-full"
-          >
-            {products.map((item) => (
-              <SwiperSlide key={item.id}>
-                <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg border border-white/10 hover:scale-105 transition-transform duration-300 p-4 text-center">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="rounded-lg h-56 w-full object-cover mb-4"
-                  />
-                  <h3 className="text-xl font-semibold text-white">{item.name}</h3>
-                  <a
-                    href={item.link}
-                    className="inline-block mt-4 px-6 py-2 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-lg text-white font-bold hover:from-cyan-300 hover:to-blue-400 transition"
-                  >
-                    Shop Now
-                  </a>
-                </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
-        </div>
+</div>
                     {/* Payment Banner Section */}
         <div className="relative z-10 w-full mt-12">
           <img
@@ -140,31 +170,41 @@ function Home() {
               </button>
             </div>
           </div>
-
-          {/* Apple Product Grid */}
-          <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-           
-            {appleProducts.map((product) => (
-              <div
-                key={product.id}
-                className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg border border-white/10 hover:scale-105 transition-transform duration-300 p-4 text-center"
-              >
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="h-40 w-full object-contain mb-4"
-                />
-                <h3 className="text-lg font-semibold text-white">{product.name}</h3>
-                <p className="text-gray-300 mt-1">{product.price}</p>
-                <button
-                  onClick={() => handleProtectedNavigation('/shop')}
-                  className="mt-4 px-6 py-2 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-lg text-white font-bold hover:from-cyan-300 hover:to-blue-400 transition"
-                >
-                  Shop Now
-                </button>
-              </div>
+                {/* Featured Products Carousel */}
+        <div className="relative z-10 max-w-7xl mx-auto py-12 px-6 mt-16">
+          <Swiper
+            slidesPerView={1}
+            spaceBetween={20}
+            pagination={{ clickable: true }}
+            autoplay={{ delay: 3000, disableOnInteraction: false }}
+            breakpoints={{
+              640: { slidesPerView: 2 },
+              1024: { slidesPerView: 4 },
+            }}
+            modules={[Pagination, Autoplay]}
+            className="w-full"
+          >
+            {products.map((item) => (
+              <SwiperSlide key={item.id}>
+                <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg border border-white/10 hover:scale-105 transition-transform duration-300 p-4 text-center">
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="rounded-lg h-56 w-full object-cover mb-4"
+                  />
+                  <h3 className="text-xl font-semibold text-white">{item.name}</h3>
+                  <a
+                    href={item.link}
+                    className="inline-block mt-4 px-6 py-2 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-lg text-white font-bold hover:from-cyan-300 hover:to-blue-400 transition"
+                  >
+                    Shop Now
+                  </a>
+                </div>
+              </SwiperSlide>
             ))}
-          </div>
+          </Swiper>
+        </div>
+
         </div>
 
         {/* Modals */}

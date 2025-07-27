@@ -1,11 +1,8 @@
-// src/components/layout/FeaturedSection.js
 import React, { useState } from "react";
-import "react-responsive-carousel/lib/styles/carousel.min.css";
-import { Carousel } from "react-responsive-carousel";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import LoginModal from "../common/LoginModal";
-import Register from "../common/Register";
+import LoginModal from "../common/LoginModal";   
+import Register from "../common/Register"; 
 
 function FeaturedSection() {
   const navigate = useNavigate();
@@ -15,7 +12,7 @@ function FeaturedSection() {
   const [showRegister, setShowRegister] = useState(false);
   const [redirectTo, setRedirectTo] = useState("/shop");
 
-  // Handles protected navigation (requires login)
+  // Protected navigation handler (avoids calling state directly in JSX)
   const handleProtectedNavigation = (path) => {
     if (currentUser) {
       navigate(path);
@@ -28,7 +25,7 @@ function FeaturedSection() {
   return (
     <div className="w-full mx-auto px-4 py-12 fade-in relative">
       {/* Decorative Background */}
-      <div className="absolute top-0 left-0 w-full h-full opacity-10">
+      <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
         <div className="absolute top-20 -left-10 w-72 h-72 bg-white rounded-full"></div>
       </div>
 
@@ -54,7 +51,14 @@ function FeaturedSection() {
                 Shop Now
               </button>
 
+              <button
+                onClick={() => handleProtectedNavigation("/user/dashboard")}
+                className="bg-transparent border-2 border-white text-white font-bold py-3 px-8 rounded-full hover:bg-white hover:text-indigo-700 transition duration-300"
+              >
+                Book Repair
+              </button>
             </div>
+
 
             {/* Benefits */}
             <div className="mt-8 flex flex-wrap justify-center md:justify-start gap-4">

@@ -1,4 +1,5 @@
 // src/pages/public/Shop.js
+import Calendar from '../../components/Calendar';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -17,7 +18,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 function Shop() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
-
+  
   const [products, setProducts] = useState([]);
   const [quickView, setQuickView] = useState(null);
   const [activeCategory, setActiveCategory] = useState('All');
@@ -254,33 +255,38 @@ function Shop() {
         )}
       </AnimatePresence>
 
-      {/* Hero Section (Full-width at the top) */}
-      <section className="bg-gradient-to-r from-gray-800 to-gray-900 text-center py-16 border-b border-gray-700">
-        <h1 className="text-4xl font-extrabold gradient-text mb-4">FoneZone Shop</h1>
-        <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-          Explore our premium smartphones, tablets, accessories, and repair services.
-        </p>
-      
+{/* Hero Section */}
+<section className="bg-gradient-to-r from-gray-800 to-gray-900 text-center py-16 border-b border-gray-700">
+  <h1 className="text-4xl font-extrabold gradient-text mb-4">FoneZone Shop</h1>
+  <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+    Explore our premium smartphones, tablets, accessories, and repair services.
+  </p>
+</section>
 
-      {/* Filters & Categories */}
-      <aside className="w-64 sticky top-24 h-fit bg-gray-900/80 border border-gray-800 rounded-xl p-4 hidden md:block ">
-        <div className="max-w-7xl mx-auto flex justify-between items-center gap-4">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 w-full px-4 py-2 mb-4 bg-gradient-to-r from-indigo-600 to-purple-700 rounded-lg"
-          >
-            <FaFilter /> Price Filter
-          </button>
-          <button
-            onClick={() => (currentUser ? navigate('/wishlist') : alert('Log in to view wishlist'))}
-            className="flex items-center justify-center gap-2 w-full px-4 py-2 mb-6 bg-gradient-to-r from-pink-600 to-rose-700 rounded-lg shadow-md"
-          >
-            <FaHeart /> <span className="hidden md:inline">Wishlist</span>
-          </button>
-        </div>
-        
-{/* Categories as Vertical Buttons */}
-    <div className="flex flex-col gap-3">
+{/* Main Content (Sidebar + Products) */}
+<div className="w-full mx-auto flex gap-6 px-6 mt-8 min-h-screen">
+
+
+    {/* Left Sidebar */}
+ <aside className="w-64 sticky top-24 h-fit flex-col bg-gray-900/80 border border-gray-800 rounded-xl p-4 hidden lg:flex">
+  {/* Top Content: Filters and Categories */}
+  <div>
+<button
+  onClick={() => setShowFilters(!showFilters)}
+  className="flex items-center gap-2 w-full px-4 py-2 mb-4 bg-gradient-to-r from-indigo-600 to-purple-700 rounded-lg"
+>
+  <FaFilter /> Price Filter
+</button>
+
+    <button
+      onClick={() => (currentUser ? navigate('/wishlist') : alert('Log in to view wishlist'))}
+      className="flex items-center justify-center gap-2 w-full px-4 py-2 mb-6 bg-gradient-to-r from-pink-600 to-rose-700 rounded-lg shadow-md"
+    >
+      <FaHeart /> <span className="hidden md:inline">Wishlist</span>
+    </button>
+
+    {/* Category Buttons */}
+    <div className="flex flex-col gap-3 mb-6">
       {categories.map((cat) => (
         <motion.button
           key={cat}
@@ -297,53 +303,47 @@ function Shop() {
         </motion.button>
       ))}
     </div>
-  </aside>
-</section>
-      {/* Price Filter */}
-      <AnimatePresence>
-        {showFilters && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="bg-gray-800/80 backdrop-blur-md border-b border-gray-700 p-4"
-          >
-            <div className="max-w-7xl mx-auto">
-              <h3 className="text-lg font-semibold mb-3">Price Range</h3>
-              <input
-                type="range"
-                min="0"
-                max="500000"
-                step="10000"
-                value={priceRange[1]}
-                onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
-                className="w-full accent-blue-500"
-              />
-              <div className="text-gray-400 text-sm mt-1">
-                Showing products up to {formatPrice(priceRange[1])}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      {/* Product Grid */}
-      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 flex-1">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {displayedProducts.length === 0 ? (
-            <div className="col-span-full text-center py-16 text-gray-400">
-              No products found. 
-            </div>
-          ) : (
-            displayedProducts.map((product) => {
-              const avgRating = getAverageRating(product.id, product.rating);
-              return (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-lg group hover:shadow-xl transition"
-                >
+    {/* Price Range Filter */}
+{showFilters && (
+  <div className="bg-gray-800/60 backdrop-blur-md border border-gray-700 p-4 rounded-lg">
+    <h3 className="text-lg font-semibold mb-3">Price Range</h3>
+    <input
+      type="range"
+      min="0"
+      max="500000"
+      step="10000"
+      value={priceRange[1]}
+      onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
+      className="w-full accent-blue-500"
+    />
+    <div className="text-gray-400 text-sm mt-1">
+      Showing products up to {formatPrice(priceRange[1])}
+    </div>
+  </div>
+)}
+  </div>
+    <Calendar />
+</aside>
+
+
+    {/* Products Grid (your existing map) */}
+    <div className="flex-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6 gap-6 w-full">
+              {displayedProducts.length === 0 ? (
+                 <div className="col-span-full text-center py-16 text-gray-400">
+                  No products found.
+                </div>
+              ) : (
+                displayedProducts.map((product) => {
+                  const avgRating = getAverageRating(product.id, product.rating);
+                  return (
+                    <motion.div
+                      key={product.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-lg group hover:shadow-xl transition"
+                    >
                   <div className="relative h-56 flex items-center justify-center p-4 bg-gray-900">
                     <img
                       src={product.image || fallbackImage}
@@ -393,38 +393,38 @@ function Shop() {
               );
             })
           )}
-        </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-4 mt-8">
-            <button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => p - 1)}
-              className={`px-4 py-2 rounded-lg ${
-                currentPage === 1
-                  ? 'bg-gray-600 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600'
-              }`}
-            >
-              Previous
-            </button>
-            <span className="text-gray-300">
-              Page {currentPage} of {totalPages}
-            </span>
-            <button
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => p + 1)}
-              className={`px-4 py-2 rounded-lg ${
-                currentPage === totalPages
-                  ? 'bg-gray-600 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600'
-              }`}
-            >
-              Next
-            </button>
           </div>
-        )}
+                   {totalPages > 1 && (
+                  <div className="mt-10 flex justify-center gap-4 items-center">
+                    <button
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage((p) => p - 1)}
+                      className={`px-5 py-2 rounded-lg text-white ${
+                        currentPage === 1
+                          ? 'bg-gray-600 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600'
+                      }`}
+                    >
+                      Previous
+                    </button>
+                    <span className="text-gray-300 font-medium">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage((p) => p + 1)}
+                      className={`px-5 py-2 rounded-lg text-white ${
+                        currentPage === totalPages
+                          ? 'bg-gray-600 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600'
+                      }`}
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+        </div>
       </div>
     </div>
   );

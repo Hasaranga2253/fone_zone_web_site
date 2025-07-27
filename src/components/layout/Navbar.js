@@ -8,7 +8,8 @@ import Register from '../common/Register';
 import SearchBar from './SearchBar';
 import {
   FaBars, FaTimes, FaHome, FaStore, FaShoppingCart,
-  FaHeadset, FaUserCircle, FaUserCog, FaSignOutAlt, FaSearch
+  FaHeadset, FaUserCircle, FaUserCog, FaSignOutAlt, FaSearch,
+  FaInfoCircle
 } from 'react-icons/fa';
 
 function Navbar() {
@@ -86,10 +87,13 @@ function Navbar() {
             <div className="hidden md:flex items-center space-x-1">
               <NavButton icon={<FaHome />} label="Home" to="/home" scrolled={scrolled} />
               <NavButton icon={<FaStore />} label="Shop" onClick={() => handleProtected('/shop')} scrolled={scrolled} />
-              <NavButton icon={<FaShoppingCart />} label="Cart" onClick={() => handleProtected('/cart')} scrolled={scrolled} badge={cartCount} />
+              
+              {currentUser && (
+              <NavButton icon={<FaShoppingCart />}label="Cart"onClick={() => handleProtected('/cart')} scrolled={scrolled} badge={cartCount}/>)}
               {currentUser?.role === 'user' && (
                 <NavButton icon={<FaHeadset />} label="Support" onClick={() => navigate('/user/ContactSupport')} scrolled={scrolled} />
               )}
+              <NavButton icon={<FaInfoCircle />} label="About" to="/about" scrolled={scrolled} />
             </div>
 
             {/* Right side (Search & Auth) */}
@@ -152,10 +156,10 @@ function Navbar() {
             <div className="p-5 space-y-1">
               <Link to="/home" onClick={() => setMobileOpen(false)} className="flex items-center p-3 text-gray-700 hover:bg-blue-50 rounded-lg"><FaHome className="mr-3" /> Home</Link>
               <button onClick={() => handleProtected('/shop')} className="flex items-center w-full p-3 text-gray-700 hover:bg-blue-50 rounded-lg"><FaStore className="mr-3" /> Shop</button>
-              <button onClick={() => handleProtected('/cart')} className="flex items-center w-full p-3 text-gray-700 hover:bg-blue-50 rounded-lg">
-                <FaShoppingCart className="mr-3" /> Cart
-                {cartCount > 0 && <span className="ml-auto bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full">{cartCount} items</span>}
-              </button>
+              <Link to="/about" onClick={() => setMobileOpen(false)} className="flex items-center p-3 text-gray-700 hover:bg-blue-50 rounded-lg"><FaInfoCircle className="mr-3" /> About</Link>
+              {currentUser && (
+                <button onClick={() => handleProtected('/cart')} className="flex items-center w-full p-3 text-gray-700 hover:bg-blue-50 rounded-lg"><FaShoppingCart className="mr-3" /> Cart{cartCount > 0 && <span className="ml-auto bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full">{cartCount} items</span>}</button>
+              )}
               {currentUser?.role === 'user' && (
                 <button onClick={() => { navigate('/user/ContactSupport'); setMobileOpen(false); }} className="flex items-center w-full p-3 text-gray-700 hover:bg-blue-50 rounded-lg"><FaHeadset className="mr-3" /> Support</button>
               )}

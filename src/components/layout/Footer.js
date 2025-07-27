@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import LoginModal from "../common/LoginModal";
 import Register from "../common/Register";
+import { FaFacebook, FaInstagram, FaWhatsapp, FaTiktok } from "react-icons/fa";
+
 
 const Footer = () => {
   const { currentUser } = useAuth();
@@ -40,6 +42,46 @@ const Footer = () => {
               <p className="text-gray-400">
                 The future of mobile shopping, repairs & delivery.
               </p>
+              
+              <div className="flex items-center gap-4 mt-6">
+                
+                <a
+                  href="https://www.facebook.com/shamika.hasaranga.1048"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-800 hover:bg-blue-600 transition"
+                >
+                  <FaFacebook className="text-white text-lg" />
+                </a>
+
+                <a
+                  href="https://www.instagram.com/noctivarium___/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-800 hover:bg-pink-500 transition"
+                >
+                  <FaInstagram className="text-white text-lg" />
+                </a>
+
+                <a
+                  href="https://wa.me/94718822672"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-800 hover:bg-green-500 transition"
+                >
+                  <FaWhatsapp className="text-white text-lg" />
+                </a>
+
+                <a
+                  href="https://www.tiktok.com/@mr_hasa?lang=en"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-800 hover:bg-gray-500 transition"
+                >
+                  <FaTiktok className="text-white text-lg" />
+                </a>
+              </div>
+
             </div>
 
             {/* Quick Links */}

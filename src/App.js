@@ -8,6 +8,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 // 🌐 Public Pages
 import Home from './pages/public/Home';
 import Shop from './pages/public/Shop';
+import About from './pages/public/AboutUs'; 
 import Cart from './pages/public/Cart';
 import Checkout from './pages/public/Checkout';
 
@@ -57,6 +58,7 @@ function App() {
           <Route path="/" element={<Layout><Home /></Layout>} />
           <Route path="/home" element={<Layout><Home /></Layout>} />
           <Route path="/shop" element={<Layout><Shop /></Layout>} />
+          <Route path="/about" element={<Layout><About /></Layout>} />  
           <Route path="/cart" element={<Layout><Cart /></Layout>} />
           <Route path="/checkout" element={<Layout><Checkout /></Layout>} />
 
@@ -65,7 +67,9 @@ function App() {
             path="/user/dashboard"
             element={
               <ProtectedRoute allowedRoles={['user']}>
-                <UserDashboard />
+                <Layout>
+                  <UserDashboard />
+                </Layout>
               </ProtectedRoute>
             }
           />
@@ -82,6 +86,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['user']}>
                 <NewRepairRequest />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/user/contact-support"
+            element={
+              <ProtectedRoute allowedRoles={['user']}>
+                <ContactSupport />
               </ProtectedRoute>
             }
           />
@@ -154,9 +166,8 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/wishlist" element={<Wishlist />} />
-          <Route path="/user/ContactSupport" element={<ContactSupport />} />
 
+          <Route path="/wishlist" element={<Wishlist />} />
         </Routes>
       </Router>
     </div>

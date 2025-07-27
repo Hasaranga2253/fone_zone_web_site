@@ -1,8 +1,8 @@
-// src/pages/user/Cart.js
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
+import { FaTrash, FaPlus, FaMinus, FaShoppingCart, FaLock } from 'react-icons/fa';
 
 function Cart() {
   const [cartItems, setCartItems] = useState([]);
@@ -25,7 +25,7 @@ function Cart() {
     const updated = cartItems.filter((item) => item.id !== id);
     setCartItems(updated);
     updateLocalStorage(updated);
-    toast.info('🗑️ Item removed from cart', { theme: 'dark' });
+    toast.info('Item removed from cart', { theme: 'dark' });
   };
 
   const handleQuantityChange = (id, delta) => {
@@ -42,10 +42,9 @@ function Cart() {
     setCartItems([]);
     const userCartKey = `cart_${currentUser.email}`;
     localStorage.removeItem(userCartKey);
-    toast.warn('🛒 Cart cleared!', { theme: 'dark' });
+    toast.warn('Cart cleared!', { theme: 'dark' });
   };
 
-  // FIX: Properly handle price as number or string
   const subtotal = cartItems.reduce((sum, item) => {
     const cleanPrice =
       typeof item.price === 'number'
@@ -55,129 +54,161 @@ function Cart() {
     return sum + cleanPrice * qty;
   }, 0);
 
-  const tax = subtotal * 0.1;
+  const tax = subtotal * 0.05;
   const discount = 0;
   const total = subtotal + tax - discount;
 
-  if (!currentUser) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-black via-gray-900 to-blue-900 text-white">
-        <h2 className="text-3xl font-bold text-red-400 drop-shadow-lg">
-          🔒 Please log in to view your cart
-        </h2>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen text-white p-8">
-      <h2 className="text-center text-cyan-400 drop-shadow-lg mb-10 text-4xl sm:text-5xl font-extrabold tracking-tight gradient-text fade-in">
-        🛒 Your Cart
-      </h2>
-      <div
-        className="absolute inset-0 bg-cover bg-center opacity-20 z-0"
-        style={{ backgroundImage: "url('/images/fallback.jpg')" }}
-      />
-      {cartItems.length === 0 ? (
-        <p className="text-center text-gray-400 text-lg">
-          Your cart is empty. Start shopping now!
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 text-white flex flex-col">
+      {/* Hero Section (Full Width, Fixed) */}
+      <section className="bg-gradient-to-r from-gray-800 to-gray-900 text-center py-16 border-b border-gray-700 w-full">
+        <h1 className="text-4xl font-extrabold gradient-text mb-4 flex items-center justify-center">
+          Your Shopping Cart
+        </h1>
+        <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+          Review your selected items before proceeding to checkout.
         </p>
-      ) : (
-        <div className="grid lg:grid-cols-3 gap-10">
-          {/* Cart Items */}
-          <div className="lg:col-span-2 space-y-6">
-            {cartItems.map((item) => (
-              <div
-                key={item.id}
-                className="flex flex-col md:flex-row items-center bg-gradient-to-br from-gray-800 to-gray-900 p-5 rounded-2xl shadow-lg border border-cyan-500 hover:shadow-cyan-500/50 transition duration-300 sticky top-8"
-              >
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="h-32 w-32 object-contain rounded-md bg-gray-700 p-2"
-                />
-                <div className="flex-1 md:ml-6 mt-4 md:mt-0 text-center md:text-left">
-                  <h3 className="text-xl font-semibold">{item.name}</h3>
-                  <p className="text-cyan-300 text-lg font-bold">
-                    {typeof item.price === 'number'
-                      ? `Rs. ${item.price.toLocaleString()}`
-                      : item.price}
-                  </p>
-                  <div className="flex justify-center md:justify-start items-center space-x-4 mt-3">
-                    <button
-                      onClick={() => handleQuantityChange(item.id, -1)}
-                      className="px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-600"
-                    >
-                      -
-                    </button>
-                    <span className="text-lg">{item.quantity || 1}</span>
-                    <button
-                      onClick={() => handleQuantityChange(item.id, 1)}
-                      className="px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-600"
-                    >
-                      +
-                    </button>
+      </section>
+
+      {/* Main Cart Section */}
+      <div className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-8">
+        {cartItems.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700">
+            <div className="bg-gray-700 p-6 rounded-full w-24 h-24 flex items-center justify-center mb-6">
+              <FaShoppingCart className="text-4xl text-blue-400" />
+            </div>
+            <h3 className="text-2xl font-bold mb-3">Your cart is empty</h3>
+            <p className="text-gray-400 mb-8 max-w-md text-center">
+              Looks like you haven't added anything to your cart yet.
+            </p>
+            <button
+              onClick={() => navigate('/shop')}
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg font-medium hover:from-blue-500 hover:to-cyan-500"
+            >
+              Browse Products
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Cart Items Section */}
+            <div className="lg:col-span-2 space-y-4">
+              {cartItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex flex-col md:flex-row items-center bg-gray-800/50 backdrop-blur-sm p-4 rounded-xl border border-gray-700 hover:border-blue-500 transition-all"
+                >
+                  <div className="w-32 h-32 flex-shrink-0 flex items-center justify-center bg-gray-700 rounded-lg p-2">
+                    <img
+                      src={item.image || '/images/fallback.jpg'}
+                      alt={item.name}
+                      className="max-h-24 max-w-24 object-contain"
+                    />
                   </div>
-                  <button
-                    onClick={() => handleRemove(item.id)}
-                    className="mt-4 px-5 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition"
-                  >
-                    Remove
-                  </button>
+
+                  <div className="flex-1 md:ml-6 mt-4 md:mt-0 text-center md:text-left">
+                    <div className="flex justify-between items-start">
+                      <h3 className="text-lg font-semibold">{item.name}</h3>
+                      <button
+                        onClick={() => handleRemove(item.id)}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        <FaTrash />
+                      </button>
+                    </div>
+
+                    <p className="text-blue-400 font-bold mt-1">
+                      {typeof item.price === 'number'
+                        ? `Rs. ${item.price.toLocaleString()}`
+                        : item.price}
+                    </p>
+
+                    <div className="flex items-center justify-center md:justify-start mt-4 gap-4">
+                      <button
+                        onClick={() => handleQuantityChange(item.id, -1)}
+                        className="w-8 h-8 flex items-center justify-center bg-gray-700 rounded-full hover:bg-gray-600"
+                      >
+                        <FaMinus className="text-xs" />
+                      </button>
+                      <span className="text-lg font-medium w-8 text-center">{item.quantity || 1}</span>
+                      <button
+                        onClick={() => handleQuantityChange(item.id, 1)}
+                        className="w-8 h-8 flex items-center justify-center bg-gray-700 rounded-full hover:bg-gray-600"
+                      >
+                        <FaPlus className="text-xs" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={handleClearCart}
+                  className="px-4 py-2 bg-red-600/30 hover:bg-red-600/40 text-red-400 rounded-lg border border-red-500"
+                >
+                  Clear Entire Cart
+                </button>
+              </div>
+            </div>
+
+            {/* Order Summary Section */}
+            <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-gray-700 h-fit sticky top-6">
+              <h3 className="text-xl font-bold text-center mb-6 pb-3 border-b border-gray-700">
+                Order Summary
+              </h3>
+
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Subtotal:</span>
+                  <span className="font-medium">Rs. {subtotal.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Tax (5%):</span>
+                  <span className="font-medium">Rs. {tax.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-red-400">
+                  <span>Discount:</span>
+                  <span>- Rs. {discount.toLocaleString()}</span>
+                </div>
+                <div className="border-t border-gray-700 pt-3 mt-3">
+                  <div className="flex justify-between font-bold text-lg">
+                    <span>Total:</span>
+                    <span className="text-blue-400">Rs. {total.toLocaleString()}</span>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
 
-          {/* Summary Section */}
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-2xl shadow-xl border border-green-500 hover:shadow-green-400/50 transition duration-300 h-fit sticky top-8">
-            <h3 className="text-2xl font-bold text-green-400 mb-6 text-center">
-              Order Summary
-            </h3>
-            <div className="space-y-4 text-lg">
-              <p className="flex justify-between">
-                <span>Subtotal:</span>
-                <span>Rs. {subtotal.toLocaleString()}</span>
-              </p>
-              <p className="flex justify-between">
-                <span>Tax (10%):</span>
-                <span>Rs. {tax.toLocaleString()}</span>
-              </p>
-              <p className="flex justify-between text-red-400">
-                <span>Discount:</span>
-                <span>- Rs. {discount.toLocaleString()}</span>
-              </p>
-              <hr className="border-gray-600" />
-              <p className="flex justify-between text-xl font-bold text-cyan-400">
-                <span>Total:</span>
-                <span>Rs. {total.toLocaleString()}</span>
-              </p>
-            </div>
+              <div className="mt-8 space-y-4">
+                <button
+                  onClick={() => navigate('/Checkout')}
+                  className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg font-medium hover:from-green-500 hover:to-emerald-500 flex items-center justify-center gap-2"
+                >
+                  <FaLock />
+                  Proceed to Checkout
+                </button>
 
-            {/* Buttons */}
-            <div className="flex flex-col space-y-4 mt-8">
-              <button
-                onClick={() => navigate('/checkout')}
-                className="py-3 bg-green-600 text-white rounded-xl text-lg font-bold hover:bg-green-700 hover:shadow-green-500/50 transition shadow-md"
-              >
-                Proceed to Checkout
-              </button>
-              <button
-                onClick={() => navigate('/shop')}
-                className="py-3 bg-blue-600 text-white rounded-xl text-lg font-bold hover:bg-blue-700 hover:shadow-blue-500/50 transition shadow-md"
-              >
-                Continue Shopping
-              </button>
-              <button
-                onClick={handleClearCart}
-                className="py-3 bg-red-600 text-white rounded-xl text-lg font-bold hover:bg-red-700 hover:shadow-red-500/50 transition shadow-md"
-              >
-                Clear Cart
-              </button>
+                <button
+                  onClick={() => navigate('/Shop')}
+                  className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg font-medium hover:from-blue-500 hover:to-cyan-500"
+                >
+                  Continue Shopping
+                </button>
+              </div>
+
+              <div className="mt-6 p-4 bg-gray-700/30 rounded-lg text-sm text-gray-400">
+                <p className="flex items-center gap-2 mb-2">
+                  <span className="text-green-400">✓</span>
+                  <span>Secure checkout with SSL encryption</span>
+                </p>
+                <p className="flex items-center gap-2">
+                  <span className="text-green-400">✓</span>
+                  <span>Free returns within 30 days</span>
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

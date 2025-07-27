@@ -78,7 +78,7 @@ const DashboardTab = ({ user, pendingRepair, repairs, setActiveTab, navigate }) 
         <div className="space-y-4">
           <div className="flex justify-between border-b border-gray-700 pb-3">
             <span className="text-gray-400">Member Since</span>
-            <span className="font-medium">Jan 2023</span>
+            <span className="font-medium">Agust 2025</span>
           </div>
           <div className="flex justify-between border-b border-gray-700 pb-3">
             <span className="text-gray-400">Total Repairs</span>

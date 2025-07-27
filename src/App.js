@@ -90,7 +90,7 @@ function App() {
             }
           />
           <Route
-            path="/user/contact-support"
+            path="/user/contactsupport"
             element={
               <ProtectedRoute allowedRoles={['user']}>
                 <ContactSupport />

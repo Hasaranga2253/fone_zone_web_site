@@ -25,12 +25,12 @@ export default function AdminDashboard() {
 
     const products = JSON.parse(localStorage.getItem('products')) || [];
     const users = JSON.parse(localStorage.getItem('registeredUsers')) || [];
-    const orders = JSON.parse(localStorage.getItem('orders')) || [];
+
 
     setOverview({
       totalProducts: products.length,
       totalUsers: users.length,
-      totalOrders: orders.length,
+      
     });
   }, [navigate]);
 
@@ -43,7 +43,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="relative min-h-screen w-full bg-gradient-to-br from-black via-gray-900 to-blue-950 text-white overflow-x-hidden">
+    <div className="relative min-h-screen w-full bg-gradient-to-br from-black via-gray-900 to-blue-950 text-white flex flex-col items-center justify-start py-10">
       {/* Background Effects */}
       <div
         className="absolute inset-0 bg-cover bg-center opacity-20 z-0"
@@ -52,22 +52,22 @@ export default function AdminDashboard() {
       <div className="absolute top-10 left-10 w-24 h-24 bg-cyan-400/10 rounded-full blur-2xl animate-pulse z-0" />
       <div className="absolute bottom-10 right-10 w-32 h-32 bg-pink-400/10 rounded-full blur-2xl animate-pulse delay-1000 z-0" />
 
-      {/* Header */}
-      <div className="relative z-10 flex items-center justify-center p-6 min-h-[30vh]">
-        <div className="glass-card-gradient w-full max-w-3xl text-center p-8 rounded-xl shadow-lg backdrop-blur-md bg-white/5 border border-white/10">
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-2  gradient-text fade-in">
-            Hello! Hasaranga
+      {/* Header (Centered) */}
+      <div className="relative z-10 flex flex-col items-center text-center max-w-3xl w-full">
+        <div className="glass-card-gradient w-full p-8 rounded-xl shadow-lg backdrop-blur-md bg-white/5 border border-white/10">
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-2 gradient-text fade-in">
+            Hello! {admin?.username || 'Admin'}
           </h1>
           <p className="text-lg mt-2 gradient-text">Welcome To Admin Dashboard</p>
         </div>
       </div>
 
-      {/* Overview Stats (Glass Style) */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-6 p-6 relative z-10">
+      {/* Overview Stats (Centered Grid) */}
+      <section className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-10 max-w-5xl w-full px-6">
         {[
           { label: 'Products', count: overview.totalProducts, icon: '📦', border: 'border-cyan-400/30' },
           { label: 'Users', count: overview.totalUsers, icon: '👥', border: 'border-pink-400/30' },
-          { label: 'Orders', count: overview.totalOrders, icon: '📊', border: 'border-green-400/30' }
+          
         ].map((card, idx) => (
           <div
             key={idx}
@@ -81,33 +81,26 @@ export default function AdminDashboard() {
         ))}
       </section>
 
-      {/* Management Links */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6 relative z-10">
-        <div className="glass-card-gradient p-6 rounded-xl backdrop-blur-md bg-white/5 border border-white/10 hover:scale-105 hover:shadow-lg transition">
+      {/* Management Links (Centered & Uniform) */}
+      <section className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-6 mt-10 max-w-4xl w-full px-6">
+        <div className="glass-card-gradient p-6 rounded-xl backdrop-blur-md bg-white/5 border border-white/10 hover:scale-105 hover:shadow-lg transition text-center">
           <h2 className="text-xl font-semibold text-cyan-400 mb-2">📦 Manage Products</h2>
           <p className="text-sm text-gray-300 mb-4">Add, edit, or remove products.</p>
           <a href="/admin/products" className="text-cyan-300 hover:underline font-semibold">
             Go to Product Management
           </a>
         </div>
-        <div className="glass-card-gradient p-6 rounded-xl backdrop-blur-md bg-white/5 border border-white/10 hover:scale-105 hover:shadow-lg transition">
+        <div className="glass-card-gradient p-6 rounded-xl backdrop-blur-md bg-white/5 border border-white/10 hover:scale-105 hover:shadow-lg transition text-center">
           <h2 className="text-xl font-semibold text-pink-400 mb-2">👥 Manage Users</h2>
           <p className="text-sm text-gray-300 mb-4">View and manage registered users.</p>
           <a href="/admin/users" className="text-pink-300 hover:underline font-semibold">
             Go to User Management
           </a>
         </div>
-        <div className="glass-card-gradient p-6 rounded-xl backdrop-blur-md bg-white/5 border border-white/10 hover:scale-105 hover:shadow-lg transition">
-          <h2 className="text-xl font-semibold text-green-400 mb-2">📈 Store Analytics</h2>
-          <p className="text-sm text-gray-300 mb-4">Check analytics and reports.</p>
-          <a href="/admin/analytics" className="text-green-300 hover:underline font-semibold">
-            View Analytics
-          </a>
-        </div>
       </section>
 
-      {/* Actions */}
-      <div className="text-center mt-10 relative z-10 flex justify-center gap-4">
+      {/* Buttons (Centered) */}
+      <div className="text-center mt-10 relative z-10 flex flex-col sm:flex-row justify-center gap-4">
         <button
           onClick={() => setShowConfirmLogout(true)}
           className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"

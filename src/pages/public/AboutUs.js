@@ -9,13 +9,13 @@ import {
 export default function About() {
   const [activeTab, setActiveTab] = useState('story');
 
-  const mapUrl = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d7926.616877543092!2d79.8588!3d6.9271!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ae2595c7f!2sColombo,%20Sri%20Lanka!5e0!3m2!1sen!2slk!4v1700000000000!5m2!1sen!2slk";
+  const mapUrl = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3962.2790153438855!2d79.9348343758495!3d6.735776693260405!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ae24f4be698ecd7%3A0x29ac6952b2a2f853!2s17%2C%2019%20Visal%20Uyana%2C%20Panadura!5e0!3m2!1sen!2slk!4v1753619119857!5m2!1sen!2slk";
 
   const team = [
-    { id: 1, name: "Alex Johnson", role: "CEO", bio: "Founder with 10+ years in mobile tech." },
-    { id: 2, name: "Sarah Williams", role: "Operations Head", bio: "Ensuring smooth business operations." },
-    { id: 3, name: "Michael Chen", role: "Lead Technician", bio: "Certified expert in mobile hardware repairs." },
-    { id: 4, name: "Jessica Brown", role: "Customer Success", bio: "Making every customer experience perfect." },
+    { id: 1, name: "Hasaranga Shamika", role: "CEO", bio: "Founder with 10+ years in mobile tech.",image: "/images/fallback.jpg"},
+    { id: 2, name: "Niven Asmitha ", role: "Operations Head", bio: "Ensuring smooth business operations.",image: "/images/team-sarah.jpg"},
+    { id: 3, name: "Dilan Theekshana", role: "Lead Technician", bio: "Certified expert in mobile hardware repairs.",image: "/images/team-sarah.jpg"},
+    { id: 4, name: "Imesh Sandamina", role: "Customer Success", bio: "Making every customer experience perfect.",image: "/images/team-sarah.jpg"},
   ];
 
   const fadeIn = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
@@ -24,7 +24,7 @@ export default function About() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 text-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-700 to-indigo-800 py-16 text-center border-b border-gray-700">
+      <section className="bg-gradient-to-r from-gray-800 to-gray-900 text-center py-16 border-b border-gray-700 w-full">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -33,7 +33,7 @@ export default function About() {
           About FoneZone
         </motion.h1>
         <p className="text-gray-200 max-w-2xl mx-auto text-lg">
-          Your trusted partner for mobile sales, repairs, and accessories since 2015.
+          Your trusted partner for mobile sales, repairs, and accessories since 2021.
         </p>
       </section>
 
@@ -62,7 +62,7 @@ export default function About() {
             <motion.div variants={fadeIn}>
               <h2 className="text-3xl font-bold mb-6 text-blue-400">Our Journey</h2>
               <p className="text-gray-300 mb-4 leading-relaxed">
-                Since 2015, FoneZone has delivered affordable and reliable mobile solutions.
+                Since 2021, FoneZone has delivered affordable and reliable mobile solutions.
                 From humble beginnings as a small shop, we've grown into a leading retailer
                 and service provider with thousands of satisfied customers.
               </p>
@@ -77,25 +77,57 @@ export default function About() {
                 </div>
               </div>
             </motion.div>
-            <motion.div variants={fadeIn} className="h-80 bg-gray-800 border-2 border-dashed rounded-xl" />
+            {/* Fallback image instead of dashed box */}
+            <motion.div
+              variants={fadeIn}
+              className="h-80 rounded-xl overflow-hidden border border-gray-700 shadow-lg flex items-center justify-center bg-gray-900"
+            >
+              <img
+                src="/images/fallback.jpg"
+                alt="FoneZone Shop"
+                className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                onError={(e) => { e.target.src = '/images/fallback.jpg'; }}
+              />
+            </motion.div>
           </motion.div>
         )}
 
-        {/* Team Tab */}
-        {activeTab === 'team' && (
-          <motion.div initial="hidden" animate="visible" variants={stagger} className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {team.map((member) => (
-              <motion.div key={member.id} variants={fadeIn} className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
-                <div className="h-48 bg-gray-700" />
-                <div className="p-4">
-                  <h3 className="text-xl font-bold">{member.name}</h3>
-                  <p className="text-blue-400 text-sm mb-2">{member.role}</p>
-                  <p className="text-gray-400 text-sm">{member.bio}</p>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
+{/* Team Tab */}
+{activeTab === 'team' && (
+  <motion.div
+    initial="hidden"
+    animate="visible"
+    variants={stagger}
+    className="grid md:grid-cols-2 lg:grid-cols-4 gap-6"
+  >
+    {team.map((member) => (
+      <motion.div
+        key={member.id}
+        variants={fadeIn}
+        className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden"
+      >
+        {/* Each member uses its own image directly */}
+        <div className="h-48 bg-gray-700">
+          <img
+            src={member.image}  // Directly use each member's image path
+            alt={member.name}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.src = ''; 
+            }}
+          />
+        </div>
+        <div className="p-4">
+          <h3 className="text-xl font-bold">{member.name}</h3>
+          <p className="text-blue-400 text-sm mb-2">{member.role}</p>
+          <p className="text-gray-400 text-sm">{member.bio}</p>
+        </div>
+      </motion.div>
+    ))}
+  </motion.div>
+)}
+
+
 
         {/* Values Tab */}
         {activeTab === 'values' && (
@@ -132,11 +164,11 @@ export default function About() {
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <FaMapMarkerAlt className="text-blue-400 mt-1" />
-                  <span className="text-gray-300 text-sm">123 Tech Avenue, Colombo, Sri Lanka</span>
+                  <span className="text-gray-300 text-sm">17/19, Visal Uyana, Hirana, Panadura, Sri Lanka</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <FaPhone className="text-blue-400 mt-1" />
-                  <span className="text-gray-300 text-sm">+94 77 123 4567</span>
+                  <span className="text-gray-300 text-sm">+94 771 882 2672</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <FaEnvelope className="text-blue-400 mt-1" />
@@ -162,17 +194,6 @@ export default function About() {
           </motion.div>
         )}
       </main>
-
-      {/* Footer */}
-      <footer className="bg-gray-950 text-gray-400 py-8 mt-16 border-t border-gray-800 text-center text-sm">
-        <p>© {new Date().getFullYear()} FoneZone. All Rights Reserved.</p>
-        <div className="flex justify-center gap-6 mt-4">
-          <FaFacebook className="hover:text-white cursor-pointer" />
-          <FaTwitter className="hover:text-white cursor-pointer" />
-          <FaInstagram className="hover:text-white cursor-pointer" />
-          <FaLinkedin className="hover:text-white cursor-pointer" />
-        </div>
-      </footer>
     </div>
   );
 }

@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FaArrowLeft } from 'react-icons/fa';
 
 export default function ManageUsers() {
   const [employees, setEmployees] = useState([]);
   const [users, setUsers] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const allUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
 
-    // Exclude the admin account
     const filtered = allUsers.filter(user => user.email !== 'admin@fonezone.com');
 
-    // Separate employees and users
     setEmployees(filtered.filter(u => u.role === 'employee'));
     setUsers(filtered.filter(u => u.role === 'user'));
   }, []);
@@ -20,12 +21,26 @@ export default function ManageUsers() {
     const updated = allUsers.filter(user => user.email !== email);
     localStorage.setItem('registeredUsers', JSON.stringify(updated));
 
-    // Update local state
     if (role === 'employee') {
       setEmployees(prev => prev.filter(u => u.email !== email));
     } else {
       setUsers(prev => prev.filter(u => u.email !== email));
     }
+  };
+
+  const handlePromote = (email, category) => {
+    if (!category) return;
+
+    const allUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
+    const updatedUsers = allUsers.map(u =>
+      u.email === email ? { ...u, role: 'employee', category } : u
+    );
+
+    localStorage.setItem('registeredUsers', JSON.stringify(updatedUsers));
+
+    const filtered = updatedUsers.filter(user => user.email !== 'admin@fonezone.com');
+    setEmployees(filtered.filter(u => u.role === 'employee'));
+    setUsers(filtered.filter(u => u.role === 'user'));
   };
 
   const renderEmployeeTable = () => (
@@ -56,9 +71,7 @@ export default function ManageUsers() {
                     </span>
                   </td>
                   <td className="px-4 py-2">
-                    {emp.category || (
-                      <span className="text-gray-400 italic">N/A</span>
-                    )}
+                    {emp.category || <span className="text-gray-400 italic">N/A</span>}
                   </td>
                   <td className="px-4 py-2">
                     <button
@@ -103,7 +116,21 @@ export default function ManageUsers() {
                       {user.role}
                     </span>
                   </td>
-                  <td className="px-4 py-2">
+                  <td className="px-4 py-2 space-x-2">
+                    <select
+                      onChange={(e) => {
+                        handlePromote(user.email, e.target.value);
+                        e.target.value = '';
+                      }}
+                      className="bg-gray-700 text-white px-2 py-1 rounded"
+                      defaultValue=""
+                    >
+                      <option value="" disabled>Promote to Employee</option>
+                      <option value="Repair Technician">Repair Technician</option>
+                      <option value="Sales Support">Sales Support</option>
+                      <option value="Delivery Driver">Delivery Driver</option>
+                    </select>
+
                     <button
                       onClick={() => handleDelete(user.email, user.role)}
                       className="bg-red-500 hover:bg-red-600 px-3 py-1 text-white rounded shadow"
@@ -122,8 +149,18 @@ export default function ManageUsers() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-blue-950 text-white p-6">
+      {/* Navigate to Dashboard */}
+      <div className="mb-6">
+        <button
+          onClick={() => navigate('/admin/dashboard')}
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-lg hover:opacity-90 transition"
+        >
+          <FaArrowLeft /> Admin Dashboard
+        </button>
+      </div>
+
       <h2 className="text-4xl font-bold text-center gradient-text mb-10 sm:text-5xl tracking-tight gradient-text fade-in">
-         Manage Registered Users
+        Manage Registered Users
       </h2>
 
       {renderEmployeeTable()}

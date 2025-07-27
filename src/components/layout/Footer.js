@@ -140,13 +140,13 @@ const Footer = () => {
               <ul className="space-y-2 text-gray-400">
                 <li>📞 +94 71 8822 672</li>
                 <li>📧 info@fonezone.com</li>
-                <li>📍 123 Pettah Main Street, Mobile City</li>
+                <li>📍 17/19, Visal Uyana, Hirana, Panadura, Sri Lanka</li>
               </ul>
             </div>
           </div>
 
           <div className="border-t border-white/10 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 FoneZone. All rights reserved.</p>
+            <p>&copy; 2025 FoneZone. All rights reserved.</p>
           </div>
         </div>
       </footer>

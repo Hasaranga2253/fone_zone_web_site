@@ -1,5 +1,7 @@
+// src/pages/public/Cart.js
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
 import { FaTrash, FaPlus, FaMinus, FaShoppingCart, FaLock } from 'react-icons/fa';
@@ -58,22 +60,46 @@ function Cart() {
   const discount = 0;
   const total = subtotal + tax - discount;
 
+  // Animation variants
+  const fadeIn = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  };
+  const stagger = { visible: { transition: { staggerChildren: 0.15 } } };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 text-white flex flex-col">
-      {/* Hero Section (Full Width, Fixed) */}
-      <section className="bg-gradient-to-r from-gray-800 to-gray-900 text-center py-16 border-b border-gray-700 w-full">
-        <h1 className="text-4xl font-extrabold gradient-text mb-4 flex items-center justify-center">
+    <motion.div
+      className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 text-white flex flex-col"
+      initial="hidden"
+      animate="visible"
+      variants={stagger}
+    >
+      {/* Hero Section with border-x like others */}
+      <motion.section
+        className="bg-gradient-to-r from-gray-800 to-gray-900 text-center py-16 border-b border-gray-700 w-full"
+        variants={fadeIn}
+      >
+        <motion.h1 variants={fadeIn} className="text-5xl font-bold mb-4">
           Your Shopping Cart
-        </h1>
-        <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+        </motion.h1>
+        <motion.p
+          variants={fadeIn}
+          className="text-gray-400 text-lg max-w-2xl mx-auto"
+        >
           Review your selected items before proceeding to checkout.
-        </p>
-      </section>
+        </motion.p>
+      </motion.section>
 
       {/* Main Cart Section */}
-      <div className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-8">
+      <motion.div
+        className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-8"
+        variants={stagger}
+      >
         {cartItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700">
+          <motion.div
+            variants={fadeIn}
+            className="flex flex-col items-center justify-center py-16 bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl"
+          >
             <div className="bg-gray-700 p-6 rounded-full w-24 h-24 flex items-center justify-center mb-6">
               <FaShoppingCart className="text-4xl text-blue-400" />
             </div>
@@ -87,14 +113,18 @@ function Cart() {
             >
               Browse Products
             </button>
-          </div>
+          </motion.div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <motion.div
+            variants={stagger}
+            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+          >
             {/* Cart Items Section */}
             <div className="lg:col-span-2 space-y-4">
               {cartItems.map((item) => (
-                <div
+                <motion.div
                   key={item.id}
+                  variants={fadeIn}
                   className="flex flex-col md:flex-row items-center bg-gray-800/50 backdrop-blur-sm p-4 rounded-xl border border-gray-700 hover:border-blue-500 transition-all"
                 >
                   <div className="w-32 h-32 flex-shrink-0 flex items-center justify-center bg-gray-700 rounded-lg p-2">
@@ -104,7 +134,6 @@ function Cart() {
                       className="max-h-24 max-w-24 object-contain"
                     />
                   </div>
-
                   <div className="flex-1 md:ml-6 mt-4 md:mt-0 text-center md:text-left">
                     <div className="flex justify-between items-start">
                       <h3 className="text-lg font-semibold">{item.name}</h3>
@@ -115,13 +144,11 @@ function Cart() {
                         <FaTrash />
                       </button>
                     </div>
-
                     <p className="text-blue-400 font-bold mt-1">
                       {typeof item.price === 'number'
                         ? `Rs. ${item.price.toLocaleString()}`
                         : item.price}
                     </p>
-
                     <div className="flex items-center justify-center md:justify-start mt-4 gap-4">
                       <button
                         onClick={() => handleQuantityChange(item.id, -1)}
@@ -129,7 +156,9 @@ function Cart() {
                       >
                         <FaMinus className="text-xs" />
                       </button>
-                      <span className="text-lg font-medium w-8 text-center">{item.quantity || 1}</span>
+                      <span className="text-lg font-medium w-8 text-center">
+                        {item.quantity || 1}
+                      </span>
                       <button
                         onClick={() => handleQuantityChange(item.id, 1)}
                         className="w-8 h-8 flex items-center justify-center bg-gray-700 rounded-full hover:bg-gray-600"
@@ -138,25 +167,27 @@ function Cart() {
                       </button>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               ))}
 
-              <div className="flex justify-end mt-6">
+              <motion.div variants={fadeIn} className="flex justify-end mt-6">
                 <button
                   onClick={handleClearCart}
                   className="px-4 py-2 bg-red-600/30 hover:bg-red-600/40 text-red-400 rounded-lg border border-red-500"
                 >
                   Clear Entire Cart
                 </button>
-              </div>
+              </motion.div>
             </div>
 
             {/* Order Summary Section */}
-            <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-gray-700 h-fit sticky top-6">
+            <motion.div
+              variants={fadeIn}
+              className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-gray-700 h-fit sticky top-6"
+            >
               <h3 className="text-xl font-bold text-center mb-6 pb-3 border-b border-gray-700">
                 Order Summary
               </h3>
-
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Subtotal:</span>
@@ -186,7 +217,6 @@ function Cart() {
                   <FaLock />
                   Proceed to Checkout
                 </button>
-
                 <button
                   onClick={() => navigate('/Shop')}
                   className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg font-medium hover:from-blue-500 hover:to-cyan-500"
@@ -205,11 +235,11 @@ function Cart() {
                   <span>Free returns within 30 days</span>
                 </p>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 

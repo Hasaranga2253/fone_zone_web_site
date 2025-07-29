@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { FaPaperPlane, FaUser, FaHeadset, FaClock } from 'react-icons/fa';
 import Navbar from "../../components/layout/Navbar";
 import Footer from "../../components/layout/Footer";
+import { motion } from 'framer-motion';
 
 export default function ContactSupport() {
   const { currentUser } = useAuth();
@@ -14,7 +15,12 @@ export default function ContactSupport() {
   const [isSending, setIsSending] = useState(false);
   const chatContainerRef = useRef(null);
 
-  // Load conversation
+  const fadeIn = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  };
+  const stagger = { visible: { transition: { staggerChildren: 0.15 } } };
+
   const loadConversation = () => {
     const allMessages = JSON.parse(localStorage.getItem('supportMessages')) || [];
     const thread = allMessages
@@ -27,7 +33,6 @@ export default function ContactSupport() {
         : msg
     );
     localStorage.setItem('supportMessages', JSON.stringify(updated));
-
     setConversation(thread);
   };
 
@@ -83,25 +88,34 @@ export default function ContactSupport() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white flex flex-col">
-      {/* Navbar */}
+    <motion.div
+      className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 text-white"
+      initial="hidden"
+      animate="visible"
+      variants={stagger}
+    >
       <Navbar />
 
-      {/* Hero Section (Full Width) */}
-      <section className="bg-gradient-to-r from-gray-800 to-gray-900 text-center py-16 border-b border-gray-700 w-full">
-        <h1 className="text-4xl font-extrabold gradient-text mb-4 flex items-center justify-center">
-          Contact Support
-        </h1>
-        <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-          Get in touch with our support team for assistance with your purchases, repairs, or any other inquiries.
-        </p>
-      </section>
+      {/* Full-width Container */}
+      <div className="w-full px-4 sm:px-8 py-8 space-y-8">
+        {/* Hero Section (Full width) */}
+        <motion.section
+          className="w-full bg-gradient-to-r from-gray-800 to-gray-900 text-center py-16 border-b border-gray-700 rounded-none"
+          variants={fadeIn}
+        >
+          <motion.h1 variants={fadeIn} className="text-5xl font-bold mb-4">
+            Contact Support
+          </motion.h1>
+          <motion.p variants={fadeIn} className="text-gray-400 text-lg max-w-2xl mx-auto">
+            Get in touch with our support team for assistance with your purchases, repairs, or any other inquiries.
+          </motion.p>
+        </motion.section>
 
-      {/* Main Content */}
-      <div className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-8">
-        {/* Chat Box */}
-        <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 overflow-hidden shadow-xl">
-          {/* Chat Header */}
+        {/* Chat Box (Full width) */}
+        <motion.div
+          variants={fadeIn}
+          className="w-full bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700 overflow-hidden shadow-xl"
+        >
           <div className="p-4 border-b border-gray-700 bg-gray-900/30">
             <div className="flex items-center gap-3">
               <div className="bg-blue-500 p-2 rounded-full">
@@ -117,7 +131,7 @@ export default function ContactSupport() {
             </div>
           </div>
 
-          {/* Chat History */}
+          {/* Conversation */}
           <div
             ref={chatContainerRef}
             className="h-[400px] overflow-y-auto p-4 bg-gradient-to-b from-gray-900/30 to-gray-800/30"
@@ -165,7 +179,7 @@ export default function ContactSupport() {
             )}
           </div>
 
-          {/* Message Input */}
+          {/* Input */}
           <div className="p-4 border-t border-gray-700 bg-gray-900/30">
             <div className="relative">
               <textarea
@@ -195,11 +209,14 @@ export default function ContactSupport() {
               </span>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-          <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
+        {/* Info Section (Full width grid) */}
+        <motion.div
+          variants={stagger}
+          className="w-full grid grid-cols-1 md:grid-cols-3 gap-4"
+        >
+          <motion.div variants={fadeIn} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
             <h3 className="font-bold text-blue-400 flex items-center gap-2">
               <FaHeadset className="text-blue-400" />
               Contact Options
@@ -208,28 +225,27 @@ export default function ContactSupport() {
               Phone: +1 (800) 123-4567<br />
               Email: support@example.com
             </p>
-          </div>
+          </motion.div>
 
-          <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
+          <motion.div variants={fadeIn} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
             <h3 className="font-bold text-blue-400">Response Time</h3>
             <p className="text-sm text-gray-400 mt-2">
               Our team typically responds within 24 hours during business days. For urgent matters, please call.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
+          <motion.div variants={fadeIn} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
             <h3 className="font-bold text-blue-400">Working Hours</h3>
             <p className="text-sm text-gray-400 mt-2">
               Monday-Friday: 9AM-5PM<br />
               Saturday: 10AM-2PM<br />
               Sunday: Closed
             </p>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
 
-      {/* Footer */}
       <Footer />
-    </div>
+    </motion.div>
   );
 }

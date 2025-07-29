@@ -1,5 +1,4 @@
-// src/pages/public/Shop.js
-import Calendar from '../../components/Calendar';
+
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -11,14 +10,13 @@ import {
   FaFilter,
   FaTimes,
   FaCheckCircle,
-  FaMobile,
 } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function Shop() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
-  
+
   const [products, setProducts] = useState([]);
   const [quickView, setQuickView] = useState(null);
   const [activeCategory, setActiveCategory] = useState('All');
@@ -33,7 +31,13 @@ function Shop() {
   const categories = ['All', 'Phones', 'Accessories', 'Tablets', 'Repair Items'];
   const fallbackImage = '/images/fallback.jpg';
 
-  // Load products and ratings
+  // Animation variants
+  const fadeIn = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  };
+  const stagger = { visible: { transition: { staggerChildren: 0.15 } } };
+
   const loadProducts = () => {
     const storedProducts = JSON.parse(localStorage.getItem('products')) || [];
     setProducts(storedProducts);
@@ -119,7 +123,6 @@ function Shop() {
   const getAverageRating = (productId, defaultRating) => {
     let sum = 0;
     let count = 0;
-    // Aggregate ratings from all users (optional, here only currentUser for simplicity)
     if (userRatings[productId]) {
       sum += userRatings[productId];
       count++;
@@ -128,8 +131,13 @@ function Shop() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 text-white relative fade-in">
-      {/* Floating hearts animation */}
+    <motion.div
+      className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 text-white relative p-0"
+      initial="hidden"
+      animate="visible"
+      variants={stagger}
+    >
+      {/* Flying Hearts Animation */}
       <AnimatePresence>
         {flyingHearts.map((heart) => (
           <motion.div
@@ -164,7 +172,7 @@ function Shop() {
         )}
       </AnimatePresence>
 
-      {/* Quick View Modal with Rating */}
+      {/* Quick View Modal */}
       <AnimatePresence>
         {quickView && (
           <motion.div
@@ -186,7 +194,6 @@ function Shop() {
                 <FaTimes className="text-gray-300" />
               </button>
               <div className="grid grid-cols-1 md:grid-cols-2">
-                {/* Product Image */}
                 <div className="relative bg-gradient-to-br from-gray-900 to-gray-950 p-8 flex items-center justify-center">
                   <img
                     src={quickView.image || fallbackImage}
@@ -197,10 +204,8 @@ function Shop() {
                     {quickView.category}
                   </div>
                 </div>
-                {/* Product Info */}
                 <div className="p-6">
                   <h2 className="text-2xl font-bold mb-2">{quickView.name}</h2>
-                  {/* User Rating Selector */}
                   <div className="flex items-center mb-4 gap-2">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <FaStar
@@ -255,179 +260,173 @@ function Shop() {
         )}
       </AnimatePresence>
 
-{/* Hero Section */}
-<section className="bg-gradient-to-r from-gray-800 to-gray-900 text-center py-16 border-b border-gray-700">
-  <h1 className="text-4xl font-extrabold gradient-text mb-4">FoneZone Shop</h1>
-  <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-    Explore our premium smartphones, tablets, accessories, and repair services.
-  </p>
-</section>
+      {/* Hero Section */}
+      <motion.section
+        className="bg-gradient-to-r from-gray-800 to-gray-900 text-center py-16 border-b border-gray-700 w-full"
+        variants={fadeIn}
+      >
+        <motion.h1 variants={fadeIn} className="text-5xl font-bold mb-4">
+          FoneZone Shop
+        </motion.h1>
+        <motion.p variants={fadeIn} className="text-gray-200 max-w-2xl mx-auto text-lg">
+          Explore our premium smartphones, tablets, accessories, and repair services.
+        </motion.p>
+      </motion.section>
 
-{/* Main Content (Sidebar + Products) */}
-<div className="w-full mx-auto flex gap-6 px-6 mt-8 min-h-screen">
-
-
-    {/* Left Sidebar */}
- <aside className="w-64 sticky top-24 h-fit flex-col bg-gray-900/80 border border-gray-800 rounded-xl p-4 hidden lg:flex">
-  {/* Top Content: Filters and Categories */}
-  <div>
-<button
-  onClick={() => setShowFilters(!showFilters)}
-  className="flex items-center gap-2 w-full px-4 py-2 mb-4 bg-gradient-to-r from-indigo-600 to-purple-700 rounded-lg"
->
-  <FaFilter /> Price Filter
-</button>
-
-    <button
-      onClick={() => (currentUser ? navigate('/wishlist') : alert('Log in to view wishlist'))}
-      className="flex items-center justify-center gap-2 w-full px-4 py-2 mb-6 bg-gradient-to-r from-pink-600 to-rose-700 rounded-lg shadow-md"
-    >
-      <FaHeart /> <span className="hidden md:inline">Wishlist</span>
-    </button>
-
-    {/* Category Buttons */}
-    <div className="flex flex-col gap-3 mb-6">
-      {categories.map((cat) => (
-        <motion.button
-          key={cat}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setActiveCategory(cat)}
-          className={`w-full text-left px-4 py-2 rounded-lg font-medium transition-all ${
-            activeCategory === cat
-              ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-lg'
-              : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-          }`}
+      {/* Main Content */}
+      <motion.div className="w-full mx-auto flex gap-6 px-6 mt-8 min-h-screen" variants={stagger}>
+        {/* Sidebar */}
+        <motion.aside
+          className="w-64 sticky top-24 h-fit flex-col bg-gray-900/80 border border-gray-800 rounded-xl p-4 hidden lg:flex"
+          variants={fadeIn}
         >
-          {cat}
-        </motion.button>
-      ))}
-    </div>
-
-    {/* Price Range Filter */}
-{showFilters && (
-  <div className="bg-gray-800/60 backdrop-blur-md border border-gray-700 p-4 rounded-lg">
-    <h3 className="text-lg font-semibold mb-3">Price Range</h3>
-    <input
-      type="range"
-      min="0"
-      max="500000"
-      step="10000"
-      value={priceRange[1]}
-      onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
-      className="w-full accent-blue-500"
-    />
-    <div className="text-gray-400 text-sm mt-1">
-      Showing products up to {formatPrice(priceRange[1])}
-    </div>
-  </div>
-)}
-  </div>
-    <Calendar />
-</aside>
-
-
-    {/* Products Grid (your existing map) */}
-    <div className="flex-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6 gap-6 w-full">
-              {displayedProducts.length === 0 ? (
-                 <div className="col-span-full text-center py-16 text-gray-400">
-                  No products found.
+          <div>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2 w-full px-4 py-2 mb-4 bg-gradient-to-r from-indigo-600 to-purple-700 rounded-lg"
+            >
+              <FaFilter /> Price Filter
+            </button>
+            <button
+              onClick={() => (currentUser ? navigate('/wishlist') : alert('Log in to view wishlist'))}
+              className="flex items-center justify-center gap-2 w-full px-4 py-2 mb-6 bg-gradient-to-r from-pink-600 to-rose-700 rounded-lg shadow-md"
+            >
+              <FaHeart /> <span className="hidden md:inline">Wishlist</span>
+            </button>
+            <div className="flex flex-col gap-3 mb-6">
+              {categories.map((cat) => (
+                <motion.button
+                  key={cat}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`w-full text-left px-4 py-2 rounded-lg font-medium transition-all ${
+                    activeCategory === cat
+                      ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-lg'
+                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  }`}
+                >
+                  {cat}
+                </motion.button>
+              ))}
+            </div>
+            {showFilters && (
+              <div className="bg-gray-800/60 backdrop-blur-md border border-gray-700 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold mb-3">Price Range</h3>
+                <input
+                  type="range"
+                  min="0"
+                  max="500000"
+                  step="10000"
+                  value={priceRange[1]}
+                  onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
+                  className="w-full accent-blue-500"
+                />
+                <div className="text-gray-400 text-sm mt-1">
+                  Showing products up to {formatPrice(priceRange[1])}
                 </div>
-              ) : (
-                displayedProducts.map((product) => {
-                  const avgRating = getAverageRating(product.id, product.rating);
-                  return (
-                    <motion.div
-                      key={product.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-lg group hover:shadow-xl transition"
-                    >
-                  <div className="relative h-56 flex items-center justify-center p-4 bg-gray-900">
-                    <img
-                      src={product.image || fallbackImage}
-                      alt={product.name}
-                      className="h-44 object-contain transition-transform group-hover:scale-110"
-                      onError={(e) => (e.target.src = fallbackImage)}
-                    />
-                    <div className="absolute top-4 right-4 flex flex-col gap-2">
-                      <button
-                        onClick={(e) => handleAddToWishlist(product, e)}
-                        className="bg-gray-800/70 hover:bg-pink-600 w-10 h-10 rounded-full flex items-center justify-center"
-                      >
-                        <FaHeart className="text-pink-400" />
-                      </button>
-                      <button
-                        onClick={() => setQuickView(product)}
-                        className="bg-gray-800/70 hover:bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center"
-                      >
-                        <FaSearch className="text-blue-400" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <div className="flex items-center mb-1">
-                      {[...Array(5)].map((_, i) => (
-                        <FaStar
-                          key={i}
-                          className={
-                            i < Math.floor(avgRating) ? 'text-yellow-400' : 'text-gray-600'
-                          }
-                        />
-                      ))}
-                      <span className="ml-2 text-gray-400 text-sm">{avgRating}</span>
-                    </div>
-                    <h3 className="font-bold text-lg truncate">{product.name}</h3>
-                    <p className="text-cyan-400 font-bold text-xl mb-3">
-                      {formatPrice(product.price)}
-                    </p>
-                    <button
-                      onClick={() => handleAddToCart(product)}
-                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 py-2 rounded-lg flex items-center justify-center gap-2"
-                    >
-                      <FaCartPlus /> Add to Cart
-                    </button>
-                  </div>
-                </motion.div>
-              );
-            })
-          )}
-
+              </div>
+            )}
           </div>
-                   {totalPages > 1 && (
-                  <div className="mt-10 flex justify-center gap-4 items-center">
-                    <button
-                      disabled={currentPage === 1}
-                      onClick={() => setCurrentPage((p) => p - 1)}
-                      className={`px-5 py-2 rounded-lg text-white ${
-                        currentPage === 1
-                          ? 'bg-gray-600 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600'
-                      }`}
-                    >
-                      Previous
-                    </button>
-                    <span className="text-gray-300 font-medium">
-                      Page {currentPage} of {totalPages}
-                    </span>
-                    <button
-                      disabled={currentPage === totalPages}
-                      onClick={() => setCurrentPage((p) => p + 1)}
-                      className={`px-5 py-2 rounded-lg text-white ${
-                        currentPage === totalPages
-                          ? 'bg-gray-600 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600'
-                      }`}
-                    >
-                      Next
-                    </button>
-                  </div>
-                )}
-        </div>
-      </div>
-    </div>
+
+        </motion.aside>
+
+        {/* Products Grid */}
+        <motion.div className="flex-1" variants={stagger}>
+          <motion.div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 w-full" variants={stagger}>
+            {displayedProducts.length === 0 ? (
+              <div className="col-span-full text-center py-16 text-gray-400">No products found.</div>
+            ) : (
+              displayedProducts.map((product) => {
+                const avgRating = getAverageRating(product.id, product.rating);
+                return (
+                  <motion.div
+                    key={product.id}
+                    variants={fadeIn}
+                    className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-lg group hover:shadow-xl transition"
+                  >
+                    <div className="relative h-56 flex items-center justify-center p-4 bg-gray-900">
+                      <img
+                        src={product.image || fallbackImage}
+                        alt={product.name}
+                        className="h-44 object-contain transition-transform group-hover:scale-110"
+                        onError={(e) => (e.target.src = fallbackImage)}
+                      />
+                      <div className="absolute top-4 right-4 flex flex-col gap-2">
+                        <button
+                          onClick={(e) => handleAddToWishlist(product, e)}
+                          className="bg-gray-800/70 hover:bg-pink-600 w-10 h-10 rounded-full flex items-center justify-center"
+                        >
+                          <FaHeart className="text-pink-400" />
+                        </button>
+                        <button
+                          onClick={() => setQuickView(product)}
+                          className="bg-gray-800/70 hover:bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center"
+                        >
+                          <FaSearch className="text-blue-400" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <div className="flex items-center mb-1">
+                        {[...Array(5)].map((_, i) => (
+                          <FaStar
+                            key={i}
+                            className={i < Math.floor(avgRating) ? 'text-yellow-400' : 'text-gray-600'}
+                          />
+                        ))}
+                        <span className="ml-2 text-gray-400 text-sm">{avgRating}</span>
+                      </div>
+                      <h3 className="font-bold text-lg truncate">{product.name}</h3>
+                      <p className="text-cyan-400 font-bold text-xl mb-3">{formatPrice(product.price)}</p>
+                      <button
+                        onClick={() => handleAddToCart(product)}
+                        className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 py-2 rounded-lg flex items-center justify-center gap-2"
+                      >
+                        <FaCartPlus /> Add to Cart
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })
+            )}
+          </motion.div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <motion.div className="mt-10 flex justify-center gap-4 items-center pb-12" variants={fadeIn}>
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className={`px-5 py-2 rounded-lg text-white ${
+                  currentPage === 1
+                    ? 'bg-gray-600 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600'
+                }`}
+              >
+                Previous
+              </button>
+              <span className="text-gray-300 font-medium">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+                                className={`px-5 py-2 rounded-lg text-white ${
+                  currentPage === totalPages
+                    ? 'bg-gray-600 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600'
+                }`}
+              >
+                Next
+              </button>
+            </motion.div>
+          )}
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 }
 
 export default Shop;
+

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
 import { FaLock, FaShoppingBag, FaCheckCircle, FaTag } from 'react-icons/fa';
@@ -62,12 +63,16 @@ function Checkout() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white p-4 sm:p-6">
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 text-white relative fade-in">
       {/* Full-width Hero Section */}
       <section className="bg-gradient-to-r from-gray-800 to-gray-900 text-center py-16 border-b border-gray-700 w-full">
-        <h1 className="text-4xl font-extrabold gradient-text mb-4 flex items-center justify-center">
-          Checkout
-        </h1>
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-5xl font-bold mb-4"
+        >
+         Checkout
+        </motion.h1>
         <p className="text-gray-400 text-lg max-w-2xl mx-auto">
           Review your order details and complete your purchase below.
         </p>

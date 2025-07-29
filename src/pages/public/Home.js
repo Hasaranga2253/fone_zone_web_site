@@ -9,9 +9,9 @@ import 'swiper/css';
 import 'swiper/css/pagination';
 import { Pagination, Autoplay } from 'swiper/modules';
 import { Carousel, Card } from '../../components/ui/AppleCardsCarousel';
+import { motion } from 'framer-motion';
 
-
-function Home() {
+export default function Home() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
@@ -35,143 +35,155 @@ function Home() {
     { id: 4, image: '/images/Galaxy-Buds3-pro.jpg', name: 'Galaxy Buds Pro', link: '/shop' },
   ];
 
-  const appleProducts = [
-    { id: 1, image: '/images/ipad 10th Gen.png', name: 'Apple iPad 10th Gen', price: 'LKR 181,600', link: '/shop' },
-    { id: 2, image: '/images/ipad 9th Gen.png', name: 'Apple iPad 9th Gen', price: 'LKR 145,000', link: '/shop' },
-    { id: 3, image: '/images/Apple MacBook Air.jpg', name: 'Apple MacBook Air', price: 'LKR 550,000', link: '/shop' },
-    { id: 4, image: '/images/Apple-AirPods-Pro.png', name: 'Apple AirPods Pro', price: 'LKR 85,000', link: '/shop' },
+  const carouselItems = [
+    {
+      src: "/images/ADD1.png",
+      title: "Enjoy a sleek design with A14 Bionic chip for work & play.",
+      category: "Apple",
+      content: (
+        <p className="text-gray-600 dark:text-gray-300">
+          Enjoy a sleek design with A14 Bionic chip for work & play.
+        </p>
+      ),
+    },
+    {
+      src: "/images/ADD2.avif",
+      title: "Launching the new Apple Vision Pro.",
+      category: "Product",
+      content: (
+        <p className="text-gray-600 dark:text-gray-300">
+          Launching the new Apple Vision Pro.
+        </p>
+      ),
+    },
+    {
+      src: "/images/ADD3.png",
+      title: "JBL Speakers",
+      category: "Audio",
+      content: (
+        <p className="text-gray-600 dark:text-gray-300">
+          Rich sound and portability for every occasion.
+        </p>
+      ),
+    },
+    {
+      src: "/images/ADD4.avif",
+      title: "Photography just got better with the new iPhone 15 Pro.",
+      category: "Camera",
+      content: (
+        <p className="text-gray-600 dark:text-gray-300">
+          Photography just got better with the new iPhone 15 Pro.
+        </p>
+      ),
+    },
+    {
+      src: "/images/ADD5.png",
+      title: "Galaxy Watch Ultra",
+      category: "Wearable",
+      content: (
+        <p className="text-gray-600 dark:text-gray-300">
+          Experience the future of wearable technology.
+        </p>
+      ),
+    },
   ];
-// Carousel Items Data (AppleCardsCarousel)
-const carouselItems = [
-  {
-    src: "/images/ADD1.png",
-    title: "Enjoy a sleek design with A14 Bionic chip for work & play.",
-    category: "Apple",
-    content: (
-      <p className="text-gray-600 dark:text-gray-300">
-        Enjoy a sleek design with A14 Bionic chip for work & play.
-      </p>
-    ),
-  },
-  {
-    src: "/images/ADD2.avif",
-    title: "Launching the new Apple Vision Pro.",
-    category: "Product",
-    content: (
-      <p className="text-gray-600 dark:text-gray-300">
-        Launching the new Apple Vision Pro.
-      </p>
-    ),
-  },
-  {
-    src: "/images/ADD3.png",
-    title: "JBL Speakers",
-    category: "Audio",
-    content: (
-      <p className="text-gray-600 dark:text-gray-300">
-        Rich sound and portability for every occasion.
-      </p>
-    ),
-  },
-  {
-    src: "/images/ADD4.avif",
-    title: "Photography just got better with the new iPhone 15 Pro.",
-    category: "Camera",
-    content: (
-      <p className="text-gray-600 dark:text-gray-300">
-        Photography just got better with the new iPhone 15 Pro.
-      </p>
-    ),
-  },
-  {
-    src: "/images/ADD5.png",
-    title: "Galaxy Watch Ultra",
-    category: "Wearable",
-    content: (
-      <p className="text-gray-600 dark:text-gray-300">
-        Experience the future of wearable technology.
-      </p>
-    ),
-  },
-];
 
+  // Animation variants for page and staggered elements
+  const fadeIn = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+  };
+
+  const stagger = {
+    visible: { transition: { staggerChildren: 0.15 } }
+  };
 
   return (
-    
-    <>
-    
-      <div className="relative w-full min-h-screen overflow-hidden text-white -mt-25 rounded-t-lg fade-in">
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={stagger}
+      className="relative w-full min-h-screen overflow-hidden text-white rounded-t-lg"
+    >
+      {/* Hero Video Section */}
+      <motion.section
+        variants={fadeIn}
+        className="relative z-10 w-full h-[60vh] flex items-center -mt-32 rounded-2xl"
+      >
+        <video
+          className="absolute inset-0 w-full h-full object-cover z-0 rounded-2xl"
+          src="/videos/fonezone-promo.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/60 z-0 rounded-2xl"></div>
+        <div className="relative z-10 w-full px-2 sm:px-6"></div>
+      </motion.section>
 
+      {/* Apple Cards Carousel */}
+      <motion.div
+        variants={fadeIn}
+        className="relative z-10 max-w-7xl mx-auto py-12"
+      >
+        <h3 className="text-3xl font-bold text-white mb-6">Explore More</h3>
+        <Carousel
+          items={carouselItems.map((card, idx) => (
+            <Card key={idx} card={card} index={idx} layout />
+          ))}
+        />
+      </motion.div>
 
-<section className="relative z-10 w-full h-[60vh] flex items-center -mt-32 fade-in rounded-2xl rounded-t-lg">
-  {/* Background Video */}
-  <video
-    className="absolute inset-0 w-full h-full object-cover z-0 rounded-2xl rounded-t-lg "
-    src="/videos/fonezone-promo.mp4"
-    autoPlay
-    loop
-    muted
-    playsInline
-  />
+      {/* Payment Banner */}
+      <motion.div
+        variants={fadeIn}
+        className="relative z-10 w-full mt-12"
+      >
+        <img
+          src="/images/Payment-Bank-cards-Desktop-.jpg"
+          alt="Payment Options"
+          className="w-full object-cover rounded-none shadow-lg"
+        />
+      </motion.div>
 
-  {/* Optional Overlay for readability */}
-  <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/60 z-0 rounded-2xl"></div>
-
-  {/* Foreground Content (if you want text/buttons here) */}
-  <div className="relative z-10 w-full px-2 sm:px-6">
-    {/* You can put content here if needed */}
-  </div>
-</section>
-        {/* Apple Cards Carousel (Place here) */}
-<div className="relative z-10 max-w-7xl mx-auto py-12">
-  <h3 className="text-3xl font-bold text-white mb-6">Explore More</h3>
-  <Carousel
-    items={carouselItems.map((card, idx) => (
-      <Card key={idx} card={card} index={idx} layout />
-    ))}
-  />
-
-</div>
-                    {/* Payment Banner Section */}
-        <div className="relative z-10 w-full mt-12">
-          <img
-            src="/images/Payment-Bank-cards-Desktop-.jpg"
-            alt="Payment Options"
-            className="w-full object-cover rounded-none shadow-lg"
-          />
-        </div>
-        
-        {/* Apple Products Promo Section */}
-        <div className="relative z-10 w-full bg-gradient-to-r from-gray-950 via-slate-900 to-blue-950 py-16 px-6 mt-12">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-10">
-            
-            {/* Banner Image */}
-            <div className="flex-1">
-              <img
-                src="/images/apple-shopping-event-full-img-opt.png"
-                alt="Apple Products"
-                className="w-full rounded-xl shadow-lg hover:scale-105 transition-transform duration-300"
-              />
-            </div>
-
-            {/* Text Content */}
-            <div className="flex-1 text-center md:text-left">
-              <h2 className="text-4xl sm:text-5xl font-bold text-white mb-4">
-                Apple Products
-              </h2>
-              <p className="text-gray-300 mb-6 text-lg">
-                Buy genuine Apple devices and accessories with exclusive deals.
-              </p>
-              <button
-                onClick={() => handleProtectedNavigation('/shop')}
-                className="px-6 py-3 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-lg text-white font-bold hover:from-cyan-300 hover:to-blue-400 transition"
-              >
-                View More
-              </button>
-            </div>
+      {/* Apple Products Section */}
+      <motion.div
+        variants={fadeIn}
+        className="relative z-10 w-full bg-gradient-to-r from-gray-950 via-slate-900 to-blue-950 py-16 px-6 mt-12"
+      >
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-10">
+          {/* Banner Image */}
+          <div className="flex-1">
+            <img
+              src="/images/apple-shopping-event-full-img-opt.png"
+              alt="Apple Products"
+              className="w-full rounded-xl shadow-lg hover:scale-105 transition-transform duration-300"
+            />
           </div>
-                {/* Featured Products Carousel */}
-        <div className="relative z-10 max-w-7xl mx-auto py-12 px-6 mt-16">
+
+          {/* Text */}
+          <div className="flex-1 text-center md:text-left">
+            <h2 className="text-4xl sm:text-5xl font-bold text-white mb-4">
+              Apple Products
+            </h2>
+            <p className="text-gray-300 mb-6 text-lg">
+              Buy genuine Apple devices and accessories with exclusive deals.
+            </p>
+            <button
+              onClick={() => handleProtectedNavigation('/shop')}
+              className="px-6 py-3 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-lg text-white font-bold hover:from-cyan-300 hover:to-blue-400 transition"
+            >
+              View More
+            </button>
+          </div>
+        </div>
+
+        {/* Featured Products Carousel */}
+        <motion.div
+          variants={fadeIn}
+          className="relative z-10 max-w-7xl mx-auto py-12 px-6 mt-16"
+        >
           <Swiper
             slidesPerView={1}
             spaceBetween={20}
@@ -203,27 +215,23 @@ const carouselItems = [
               </SwiperSlide>
             ))}
           </Swiper>
-        </div>
+        </motion.div>
+      </motion.div>
 
-        </div>
-
-        {/* Modals */}
-        {showLogin && (
-          <LoginModal
-            onClose={() => setShowLogin(false)}
-            redirectTo={redirectTo}
-            switchToRegister={() => setShowRegister(true)}
-          />
-        )}
-        {showRegister && (
-          <Register
-            onClose={() => setShowRegister(false)}
-            switchToLogin={() => setShowLogin(true)}
-          />
-        )}
-      </div>
-    </>
+      {/* Modals */}
+      {showLogin && (
+        <LoginModal
+          onClose={() => setShowLogin(false)}
+          redirectTo={redirectTo}
+          switchToRegister={() => setShowRegister(true)}
+        />
+      )}
+      {showRegister && (
+        <Register
+          onClose={() => setShowRegister(false)}
+          switchToLogin={() => setShowLogin(true)}
+        />
+      )}
+    </motion.div>
   );
 }
-
-export default Home;

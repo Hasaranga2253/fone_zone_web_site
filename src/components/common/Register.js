@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 function RegisterModal({ onClose, switchToLogin }) {
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false); // Show/hide state
   const [dob, setDob] = useState('');
   const [gender, setGender] = useState('male');
 
@@ -17,7 +19,6 @@ function RegisterModal({ onClose, switchToLogin }) {
   const handleRegister = (e) => {
     e.preventDefault();
 
-    // Validation
     if (!fullName.trim()) return toast.error('❌ Full name is required.');
     if (!username.trim()) return toast.error('❌ Username is required.');
     if (!email || !password) return toast.error('❌ Email and password are required.');
@@ -29,7 +30,7 @@ function RegisterModal({ onClose, switchToLogin }) {
       password,
       dob,
       gender,
-      role: 'user', // Always register as a regular user
+      role: 'user',
     };
 
     const existingUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
@@ -37,16 +38,12 @@ function RegisterModal({ onClose, switchToLogin }) {
       return toast.error('❌ This email is already registered.');
     }
 
-    // Save new user
     localStorage.setItem('registeredUsers', JSON.stringify([...existingUsers, newUser]));
-
-    // Auto-login after registration
     login(newUser);
     toast.success('✅ Registered and logged in!');
     onClose();
 
-    // Redirect after login (auto-detect role in case admin promoted them)
-    const updatedUser = { ...newUser }; // Could be promoted later
+    const updatedUser = { ...newUser };
     if (updatedUser.role === 'employee') {
       const cat = updatedUser.category?.toLowerCase();
       if (cat?.includes('repair')) navigate('/employee/repairs');
@@ -73,7 +70,6 @@ function RegisterModal({ onClose, switchToLogin }) {
 
         <h2 className="text-3xl font-bold mb-6 text-center">Create Account</h2>
 
-        {/* Registration Form */}
         <form onSubmit={handleRegister} className="space-y-4">
           <input
             type="text"
@@ -99,14 +95,25 @@ function RegisterModal({ onClose, switchToLogin }) {
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-          <input
-            type="password"
-            placeholder="Password"
-            className="w-full px-4 py-2 rounded bg-white/20 text-white placeholder-white/70 outline-none focus:ring-2 focus:ring-cyan-500"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+
+          {/* Password field with eye icon */}
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Password"
+              className="w-full px-4 py-2 rounded bg-white/20 text-white placeholder-white/70 outline-none focus:ring-2 focus:ring-cyan-500 pr-10"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-cyan-400"
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
+          </div>
 
           {/* DOB + Gender Row */}
           <div className="flex gap-4">
@@ -127,9 +134,6 @@ function RegisterModal({ onClose, switchToLogin }) {
             </select>
           </div>
 
-          {/* Removed Role & Category selectors (always user) */}
-
-          {/* Submit */}
           <button
             type="submit"
             className="w-full py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded text-white font-semibold transition"
@@ -138,7 +142,6 @@ function RegisterModal({ onClose, switchToLogin }) {
           </button>
         </form>
 
-        {/* Login Link */}
         <p className="text-center mt-4 text-sm text-white/80">
           Already have an account?{' '}
           <span

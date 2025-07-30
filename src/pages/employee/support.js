@@ -32,7 +32,7 @@ export default function SupportChat() {
     setEmployee(user);
     loadConversations();
 
-    const interval = setInterval(loadConversations, 5000); // Auto-refresh every 5 seconds
+    const interval = setInterval(loadConversations, 5000); 
     return () => clearInterval(interval);
   }, [navigate]);
 
@@ -64,14 +64,24 @@ export default function SupportChat() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#020617] text-white px-6 py-12 flex flex-col items-center font-sans">
       <div className="w-full max-w-5xl bg-white/5 backdrop-blur-sm border border-white/10 px-8 py-10 rounded-xl shadow-lg">
-        <h1 className="text-3xl font-bold text-pink-400 mb-6 text-center">
-          💬 Sales Support Panel
-        </h1>
+        
+        {/* Top Row: Title + Back Button */}
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-extrabold text-cyan-400">
+             Sales Support Panel
+          </h1>
+          <button
+            onClick={() => navigate('/employee/dashboard')}
+            className="px-5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold rounded-full shadow-lg transition duration-300"
+          >
+            ← Back to Dashboard
+          </button>
+        </div>
 
         {employee ? (
           <>
             <p className="text-white/90 mb-1 text-center">
-              Welcome, <span className="font-semibold text-pink-300">{employee.username}</span>
+              Welcome, <span className="font-semibold text-cyan-400">{employee.username}</span>
             </p>
             <p className="text-sm text-gray-400 mb-8 text-center">
               Role: <span className="font-medium text-white">{employee.role}</span> | Category:{' '}
@@ -133,13 +143,6 @@ export default function SupportChat() {
                 </div>
               ))
             )}
-
-            <button
-              onClick={() => navigate('/employee/dashboard')}
-              className="mt-8 px-6 py-2 bg-gray-700 hover:bg-gray-800 text-white font-medium rounded-full transition-all"
-            >
-              ← Back to Dashboard
-            </button>
           </>
         ) : (
           <p className="text-yellow-300 mt-4 text-center">Loading employee info...</p>

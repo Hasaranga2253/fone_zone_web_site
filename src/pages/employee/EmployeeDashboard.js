@@ -75,7 +75,7 @@ export default function EmployeeDashboard() {
             <p className="text-sm text-gray-300 mb-4">View and update your assigned repair jobs.</p>
             <a
               href="/employee/repairs"
-              className="inline-block px-5 py-2 rounded-full bg-cyan-600 hover:bg-cyan-700 text-white font-medium shadow transition"
+              className="inline-block px-5 py-2 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow transition"
             >
               Go to Repairs
             </a>
@@ -85,7 +85,7 @@ export default function EmployeeDashboard() {
         {/* 🚚 Delivery Driver Card */}
         {employee?.category?.toLowerCase() === 'delivery driver' && (
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6 text-center shadow-md hover:shadow-xl transition-all">
-            <h2 className="text-xl font-semibold text-indigo-400 mb-2">🚚 Delivery Jobs</h2>
+            <h2 className="text-xl font-semibold text-cyan-400 mb-2">🚚 Delivery Jobs</h2>
             <p className="text-sm text-gray-300 mb-4">View and update your assigned deliveries.</p>
             <a
               href="/employee/delivery"
@@ -99,11 +99,11 @@ export default function EmployeeDashboard() {
         {/* 💬 Sales Support Card */}
         {employee?.category?.toLowerCase() === 'sales support' && (
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6 text-center shadow-md hover:shadow-xl transition-all">
-            <h2 className="text-xl font-semibold text-pink-400 mb-2">💬 Support Chat</h2>
+            <h2 className="text-xl font-semibold text-cyan-400 mb-2">💬 Support Chat</h2>
             <p className="text-sm text-gray-300 mb-4">Communicate with customers or admin.</p>
             <a
               href="/employee/support"
-              className="inline-block px-5 py-2 rounded-full bg-pink-500 hover:bg-pink-600 text-white font-medium shadow transition"
+              className="inline-block px-5 py-2 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow transition"
             >
               Open Chat
             </a>

@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 export default function Repairs() {
   const [repairs, setRepairs] = useState([]);
   const user = JSON.parse(localStorage.getItem('user'));
+  const navigate = useNavigate();
 
   useEffect(() => {
     const allRepairs = JSON.parse(localStorage.getItem('repairs')) || [];
@@ -70,12 +72,23 @@ export default function Repairs() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#020617] text-white px-6 py-12 font-sans">
       <div className="max-w-6xl mx-auto bg-white/5 backdrop-blur-md border border-white/10 p-8 rounded-2xl shadow-2xl">
-        <h2 className="text-3xl font-extrabold text-center text-cyan-400 mb-8">
-           Repair Technician Panel
-        </h2>
+        {/* Title row with Back button */}
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-3xl font-extrabold text-cyan-400">
+            Repair Technician Panel
+          </h2>
+          <button
+            onClick={() => navigate('/employee/dashboard')}
+            className="px-5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold rounded-full shadow-lg transition duration-300"
+          >
+            ← Back to Dashboard
+          </button>
+        </div>
 
         {repairs.length === 0 ? (
-          <p className="text-center text-gray-400">No repair jobs available or assigned.</p>
+          <p className="text-center text-gray-400">
+            No repair jobs available or assigned.
+          </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm sm:text-base border border-white/10 rounded overflow-hidden">
@@ -123,7 +136,9 @@ export default function Repairs() {
                           Mark as {getNextStatus(r.status)}
                         </button>
                       ) : (
-                        <span className="text-green-300 font-semibold text-sm">✅ Completed</span>
+                        <span className="text-green-300 font-semibold text-sm">
+                          ✅ Completed
+                        </span>
                       )}
                     </td>
                   </tr>

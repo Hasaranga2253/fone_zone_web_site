@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +16,7 @@ function Shop() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
+  // State Management
   const [products, setProducts] = useState([]);
   const [quickView, setQuickView] = useState(null);
   const [activeCategory, setActiveCategory] = useState('All');
@@ -31,13 +31,14 @@ function Shop() {
   const categories = ['All', 'Phones', 'Accessories', 'Tablets', 'Repair Items'];
   const fallbackImage = '/images/fallback.jpg';
 
-  // Animation variants
+  // Animations
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
   };
   const stagger = { visible: { transition: { staggerChildren: 0.15 } } };
 
+  // Load products and ratings
   const loadProducts = () => {
     const storedProducts = JSON.parse(localStorage.getItem('products')) || [];
     setProducts(storedProducts);
@@ -55,13 +56,13 @@ function Shop() {
     return () => window.removeEventListener('storage', onStorageChange);
   }, [currentUser]);
 
+  // Filtering and pagination
   const filteredProducts = products.filter(
     (p) =>
       (activeCategory === 'All' || p.category === activeCategory) &&
       p.price >= priceRange[0] &&
       p.price <= priceRange[1]
   );
-
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
   const displayedProducts = filteredProducts.slice(
     (currentPage - 1) * productsPerPage,
@@ -72,13 +73,14 @@ function Shop() {
     setCurrentPage(1);
   }, [activeCategory, priceRange]);
 
+  // Helpers
   const formatPrice = (price) => `Rs. ${price.toLocaleString('en-US')}`;
-
   const showNotification = (message) => {
     setNotifyMessage(message);
     setTimeout(() => setNotifyMessage(''), 3000);
   };
 
+  // Cart handler
   const handleAddToCart = (product) => {
     if (!currentUser) return alert('Please log in to add to your cart.');
     const key = `cart_${currentUser.email}`;
@@ -93,12 +95,15 @@ function Shop() {
     showNotification(`${product.name} has been added to your cart!`);
   };
 
+  // Wishlist handler (with flying hearts)
   const handleAddToWishlist = (product, e) => {
     if (!currentUser) return alert('Please log in to save to wishlist.');
     const key = `wishlist_${currentUser.email}`;
     const wishlist = JSON.parse(localStorage.getItem(key)) || [];
     if (!wishlist.find((i) => i.id === product.id)) {
       localStorage.setItem(key, JSON.stringify([...wishlist, product]));
+
+      // Heart animation
       const rect = e.currentTarget.getBoundingClientRect();
       const hearts = Array.from({ length: 5 }, (_, i) => ({
         id: `${Date.now()}-${i}`,
@@ -108,10 +113,12 @@ function Shop() {
       }));
       setFlyingHearts(hearts);
       setTimeout(() => setFlyingHearts([]), 1000);
+
       showNotification(`${product.name} has been added to your wishlist!`);
     }
   };
 
+  // Ratings handler
   const handleRateProduct = (productId, rating) => {
     if (!currentUser) return alert('Please log in to rate products.');
     const updatedRatings = { ...userRatings, [productId]: rating };
@@ -158,7 +165,7 @@ function Shop() {
         ))}
       </AnimatePresence>
 
-      {/* Notification */}
+      {/* Notification Popup */}
       <AnimatePresence>
         {notifyMessage && (
           <motion.div
@@ -185,15 +192,19 @@ function Shop() {
               initial={{ scale: 0.9, y: 20, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.9, y: 20, opacity: 0 }}
-              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl border border-gray-700 w-full max-w-2xl overflow-hidden shadow-2xl"
+              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl border border-gray-700 w-full max-w-2xl overflow-hidden shadow-2xl relative"
             >
+              {/* Close Button */}
               <button
                 onClick={() => setQuickView(null)}
                 className="absolute top-4 right-4 z-10 bg-gray-700 hover:bg-gray-600 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
               >
                 <FaTimes className="text-gray-300" />
               </button>
+
+              {/* Modal Content */}
               <div className="grid grid-cols-1 md:grid-cols-2">
+                {/* Product Image */}
                 <div className="relative bg-gradient-to-br from-gray-900 to-gray-950 p-8 flex items-center justify-center">
                   <img
                     src={quickView.image || fallbackImage}
@@ -204,8 +215,12 @@ function Shop() {
                     {quickView.category}
                   </div>
                 </div>
+
+                {/* Product Details */}
                 <div className="p-6">
                   <h2 className="text-2xl font-bold mb-2">{quickView.name}</h2>
+
+                  {/* Ratings */}
                   <div className="flex items-center mb-4 gap-2">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <FaStar
@@ -222,6 +237,8 @@ function Shop() {
                       Your Rating: {userRatings[quickView.id] || 'N/A'}
                     </span>
                   </div>
+
+                  {/* Price & Description */}
                   <p className="text-cyan-400 text-2xl font-bold mb-4">
                     {formatPrice(quickView.price)}
                   </p>
@@ -229,6 +246,8 @@ function Shop() {
                     <h3 className="text-gray-300 font-medium mb-2">Description</h3>
                     <p className="text-gray-400">{quickView.description || 'No description available.'}</p>
                   </div>
+
+                  {/* Actions */}
                   <div className="flex flex-col sm:flex-row gap-3">
                     <motion.button
                       whileHover={{ scale: 1.03 }}
@@ -280,19 +299,25 @@ function Shop() {
           className="w-64 sticky top-24 h-fit flex-col bg-gray-900/80 border border-gray-800 rounded-xl p-4 hidden lg:flex"
           variants={fadeIn}
         >
+          {/* Filters & Category */}
           <div>
+            {/* Price Filter Toggle */}
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="flex items-center gap-2 w-full px-4 py-2 mb-4 bg-gradient-to-r from-indigo-600 to-purple-700 rounded-lg"
             >
               <FaFilter /> Price Filter
             </button>
+
+            {/* Wishlist Shortcut */}
             <button
               onClick={() => (currentUser ? navigate('/wishlist') : alert('Log in to view wishlist'))}
               className="flex items-center justify-center gap-2 w-full px-4 py-2 mb-6 bg-gradient-to-r from-pink-600 to-rose-700 rounded-lg shadow-md"
             >
               <FaHeart /> <span className="hidden md:inline">Wishlist</span>
             </button>
+
+            {/* Categories */}
             <div className="flex flex-col gap-3 mb-6">
               {categories.map((cat) => (
                 <motion.button
@@ -310,6 +335,8 @@ function Shop() {
                 </motion.button>
               ))}
             </div>
+
+            {/* Price Filter Slider */}
             {showFilters && (
               <div className="bg-gray-800/60 backdrop-blur-md border border-gray-700 p-4 rounded-lg">
                 <h3 className="text-lg font-semibold mb-3">Price Range</h3>
@@ -328,7 +355,6 @@ function Shop() {
               </div>
             )}
           </div>
-
         </motion.aside>
 
         {/* Products Grid */}
@@ -345,6 +371,7 @@ function Shop() {
                     variants={fadeIn}
                     className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-lg group hover:shadow-xl transition"
                   >
+                    {/* Product Image & Quick Actions */}
                     <div className="relative h-56 flex items-center justify-center p-4 bg-gray-900">
                       <img
                         src={product.image || fallbackImage}
@@ -353,12 +380,14 @@ function Shop() {
                         onError={(e) => (e.target.src = fallbackImage)}
                       />
                       <div className="absolute top-4 right-4 flex flex-col gap-2">
+                        {/* Wishlist Button */}
                         <button
                           onClick={(e) => handleAddToWishlist(product, e)}
                           className="bg-gray-800/70 hover:bg-pink-600 w-10 h-10 rounded-full flex items-center justify-center"
                         >
                           <FaHeart className="text-pink-400" />
                         </button>
+                        {/* Quick View Button */}
                         <button
                           onClick={() => setQuickView(product)}
                           className="bg-gray-800/70 hover:bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center"
@@ -367,7 +396,10 @@ function Shop() {
                         </button>
                       </div>
                     </div>
+
+                    {/* Product Details */}
                     <div className="p-4">
+                      {/* Rating */}
                       <div className="flex items-center mb-1">
                         {[...Array(5)].map((_, i) => (
                           <FaStar
@@ -377,8 +409,12 @@ function Shop() {
                         ))}
                         <span className="ml-2 text-gray-400 text-sm">{avgRating}</span>
                       </div>
+
+                      {/* Name & Price */}
                       <h3 className="font-bold text-lg truncate">{product.name}</h3>
                       <p className="text-cyan-400 font-bold text-xl mb-3">{formatPrice(product.price)}</p>
+
+                      {/* Add to Cart */}
                       <button
                         onClick={() => handleAddToCart(product)}
                         className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 py-2 rounded-lg flex items-center justify-center gap-2"
@@ -412,7 +448,7 @@ function Shop() {
               <button
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage((p) => p + 1)}
-                                className={`px-5 py-2 rounded-lg text-white ${
+                className={`px-5 py-2 rounded-lg text-white ${
                   currentPage === totalPages
                     ? 'bg-gray-600 cursor-not-allowed'
                     : 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600'
@@ -429,4 +465,3 @@ function Shop() {
 }
 
 export default Shop;
-

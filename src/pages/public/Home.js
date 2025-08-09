@@ -205,12 +205,20 @@ export default function Home() {
                     className="rounded-lg h-56 w-full object-cover mb-4"
                   />
                   <h3 className="text-xl font-semibold text-white">{item.name}</h3>
-                  <a
-                    href={item.link}
+                  <button
                     className="inline-block mt-4 px-6 py-2 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-lg text-white font-bold hover:from-cyan-300 hover:to-blue-400 transition"
+                    onClick={() => {
+                      if (currentUser) {
+                        navigate(item.link);
+                      } else {
+                        setRedirectTo(item.link);
+                        setShowLogin(true);
+                      }
+                    }}
+                    aria-label={`Shop ${item.name}`}
                   >
                     Shop Now
-                  </a>
+                  </button>
                 </div>
               </SwiperSlide>
             ))}

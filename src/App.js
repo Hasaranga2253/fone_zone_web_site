@@ -30,6 +30,9 @@ import Repairs from './pages/employee/repairs';
 import DeliveryJobs from './pages/employee/delivery';
 import SupportChat from './pages/employee/support';
 
+// ❌ Unauthorized page (create this page if you haven't yet)
+import Unauthorized from './pages/Unauthorized';
+
 function App() {
   useEffect(() => {
     const users = JSON.parse(localStorage.getItem('registeredUsers')) || [];
@@ -59,7 +62,19 @@ function App() {
           <Route path="/home" element={<Layout><Home /></Layout>} />
           <Route path="/shop" element={<Layout><Shop /></Layout>} />
           <Route path="/about" element={<Layout><About /></Layout>} />  
-          <Route path="/cart" element={<Layout><Cart /></Layout>} />
+          
+          {/* 🛑 PROTECTED Cart Route (not for admins) */}
+          <Route 
+            path="/cart"
+            element={
+              <ProtectedRoute allowedRoles={['user', 'employee']}>
+                <Layout>
+                  <Cart />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
           <Route path="/checkout" element={<Layout><Checkout /></Layout>} />
 
           {/* 👤 User Routes */}
@@ -167,7 +182,12 @@ function App() {
             }
           />
 
+          {/* Wishlist is public/unprotected */}
           <Route path="/wishlist" element={<Wishlist />} />
+
+          {/* Unauthorized Page */}
+          <Route path="/unauthorized" element={<Unauthorized />} />
+
         </Routes>
       </Router>
     </div>

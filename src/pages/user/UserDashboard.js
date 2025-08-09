@@ -1,76 +1,48 @@
 // src/pages/user/UserDashboard.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  FaTools, FaShoppingCart, FaUser, FaCog, FaBell, FaPlus
-} from 'react-icons/fa';
+import { FaTools, FaShoppingCart, FaUser, FaCog, FaPlus } from 'react-icons/fa';
+import { Toaster, toast } from 'react-hot-toast';
 
-// Helper functions
-const getProgress = (status) => {
-  switch (status) {
-    case 'pending': return 33;
-    case 'processing': return 66;
-    case 'completed': return 100;
-    default: return 0;
-  }
-};
-const getStatusColor = (status) => {
-  switch (status) {
-    case 'pending': return 'bg-yellow-500';
-    case 'processing': return 'bg-blue-500';
-    case 'completed': return 'bg-green-500';
-    default: return 'bg-gray-500';
-  }
-};
-const getStatusText = (status) => {
-  switch (status) {
-    case 'pending': return 'Pending Assignment';
-    case 'processing': return 'In Progress';
-    case 'completed': return 'Completed';
-    default: return 'Status Unknown';
-  }
-};
+const API_BASE = (process.env.REACT_APP_USER_DASH_API || 'http://localhost/Fonezone/userdashboard').replace(/\/+$/, '');
 
-// Header
+// ---- helpers (same visuals you had)
+const getProgress = (s) => (s === 'pending' ? 33 : s === 'processing' ? 66 : s === 'completed' ? 100 : 0);
+const getStatusColor = (s) =>
+  s === 'pending' ? 'bg-yellow-500' : s === 'processing' ? 'bg-blue-500' : s === 'completed' ? 'bg-green-500' : 'bg-gray-500';
+const getStatusText = (s) =>
+  s === 'pending' ? 'Pending Assignment' : s === 'processing' ? 'In Progress' : s === 'completed' ? 'Completed' : 'Status Unknown';
+
+// ---- header
 const DashboardHeader = ({ user }) => (
   <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
     <div>
-      <h1 className="text-2xl font-bold flex items-center gap-3">
-          {user.username}'s Dashboard
-      </h1>
-      <p className="text-gray-400 text-sm">
-        Welcome back to your repair management portal
-      </p>
+      <h1 className="text-2xl font-bold flex items-center gap-3">{user.username}'s Dashboard</h1>
+      <p className="text-gray-400 text-sm">Welcome back to your repair management portal</p>
     </div>
   </div>
 );
 
-// Navigation Tabs
+// ---- tabs
 const NavigationTabs = ({ activeTab, setActiveTab }) => (
   <div className="flex border-b border-gray-700 mb-6">
     {['dashboard', 'repairs', 'new-repair'].map((tab) => (
       <button
         key={tab}
-        className={`px-4 py-2 font-medium ${
-          activeTab === tab
-            ? 'text-blue-400 border-b-2 border-blue-400'
-            : 'text-gray-400'
-        }`}
+        className={`px-4 py-2 font-medium ${activeTab === tab ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400'}`}
         onClick={() => setActiveTab(tab)}
       >
-        {tab === 'dashboard' && 'Dashboard'}
-        {tab === 'repairs' && 'My Repairs'}
-        {tab === 'new-repair' && 'New Repair'}
+        {tab === 'dashboard' ? 'Dashboard' : tab === 'repairs' ? 'My Repairs' : 'New Repair'}
       </button>
     ))}
   </div>
 );
 
-// Dashboard Tab (main content area)
+// ---- dashboard tab
 const DashboardTab = ({ user, pendingRepair, repairs, setActiveTab, navigate }) => (
   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
     {/* Account Overview */}
-    <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="bg-gray-800/50 rounded-xl border border-gray-700 p-6">
         <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
           <FaUser className="text-blue-400" /> Account Overview
@@ -78,7 +50,7 @@ const DashboardTab = ({ user, pendingRepair, repairs, setActiveTab, navigate }) 
         <div className="space-y-4">
           <div className="flex justify-between border-b border-gray-700 pb-3">
             <span className="text-gray-400">Member Since</span>
-            <span className="font-medium">Agust 2025</span>
+            <span className="font-medium">August 2025</span>
           </div>
           <div className="flex justify-between border-b border-gray-700 pb-3">
             <span className="text-gray-400">Total Repairs</span>
@@ -86,9 +58,7 @@ const DashboardTab = ({ user, pendingRepair, repairs, setActiveTab, navigate }) 
           </div>
           <div className="flex justify-between">
             <span className="text-gray-400">Completed Repairs</span>
-            <span className="font-medium">
-              {repairs.filter(r => r.status === 'completed').length}
-            </span>
+            <span className="font-medium">{repairs.filter((r) => r.status === 'completed').length}</span>
           </div>
         </div>
       </div>
@@ -134,16 +104,12 @@ const DashboardTab = ({ user, pendingRepair, repairs, setActiveTab, navigate }) 
         </div>
         {pendingRepair ? (
           <div>
-            {/* Device Card */}
             <div className="bg-gray-700/30 rounded-lg p-4 border border-gray-600 mb-4">
               <h3 className="font-bold">{pendingRepair.device}</h3>
               <p className="text-gray-300 text-sm">{pendingRepair.issue}</p>
             </div>
             <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
-              <div
-                className={`h-full ${getStatusColor(pendingRepair.status)}`}
-                style={{ width: `${getProgress(pendingRepair.status)}%` }}
-              />
+              <div className={`h-full ${getStatusColor(pendingRepair.status)}`} style={{ width: `${getProgress(pendingRepair.status)}%` }} />
             </div>
             <button
               onClick={() => setActiveTab('repairs')}
@@ -170,7 +136,7 @@ const DashboardTab = ({ user, pendingRepair, repairs, setActiveTab, navigate }) 
   </div>
 );
 
-// RepairsTab Component
+// ---- repairs tab
 const RepairsTab = ({ repairs, setActiveTab, handleCancelRepair }) => (
   <div className="bg-gray-800/50 rounded-xl border border-gray-700 p-6">
     <div className="flex justify-between items-center mb-6">
@@ -187,17 +153,19 @@ const RepairsTab = ({ repairs, setActiveTab, handleCancelRepair }) => (
     {repairs.length === 0 ? (
       <div className="text-center text-gray-400">No repair requests yet.</div>
     ) : (
-      repairs.map((repair) => (
-        <div key={repair.id} className="bg-gray-700/30 rounded-lg p-4 mb-4 border border-gray-600">
-          <h3 className="font-bold">{repair.device}</h3>
-          <p className="text-gray-300 text-sm">{repair.issue}</p>
+      repairs.map((r) => (
+        <div key={r.id} className="bg-gray-700/30 rounded-lg p-4 mb-4 border border-gray-600">
+          <h3 className="font-bold">{r.device}</h3>
+          <p className="text-gray-300 text-sm">{r.issue}</p>
           <div className="mt-2">
-            <button
-              onClick={() => handleCancelRepair(repair.id)}
-              className="px-3 py-1 text-xs bg-red-600/30 hover:bg-red-600/40 rounded-lg"
-            >
-              Cancel
-            </button>
+            {r.status === 'pending' && (
+              <button
+                onClick={() => handleCancelRepair(r.id)}
+                className="px-3 py-1 text-xs bg-red-600/30 hover:bg-red-600/40 rounded-lg"
+              >
+                Cancel
+              </button>
+            )}
           </div>
         </div>
       ))
@@ -205,19 +173,21 @@ const RepairsTab = ({ repairs, setActiveTab, handleCancelRepair }) => (
   </div>
 );
 
-// NewRepairTab Component
-const NewRepairTab = ({ existingRequest, handleSubmitRepair, setActiveTab, handleCancelRepair }) => {
+// ---- new repair tab
+const NewRepairTab = ({ existingRequest, handleSubmitRepair, setActiveTab, handleCancelRepair, submitting }) => {
   const [device, setDevice] = useState('');
   const [issue, setIssue] = useState('');
-
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    handleSubmitRepair(device, issue);
+    handleSubmitRepair(device.trim(), issue.trim(), () => {
+      setDevice('');
+      setIssue('');
+      setActiveTab('dashboard');
+    });
   };
 
   return (
-    
-    <div className="bg-gray-800/50 rounded-xl border border-gray-700 p-6 max-w-2xl mx-auto">
+    <div className="bg-gray-800/50 rounded-xl border border-gray-700 p-6">
       <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
         <FaTools className="text-blue-400" />
         {existingRequest ? 'Existing Repair Request' : 'Create New Repair Request'}
@@ -249,14 +219,17 @@ const NewRepairTab = ({ existingRequest, handleSubmitRepair, setActiveTab, handl
             onChange={(e) => setIssue(e.target.value)}
             placeholder="Describe the issue"
             rows={4}
-            className="w-full px-4 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
+            className="w-full px-4 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white resize-none min-h-80"
             required
           />
           <button
             type="submit"
-            className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg font-bold hover:from-blue-500 hover:to-cyan-500"
+            disabled={submitting}
+            className={`w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg font-bold hover:from-blue-500 hover:to-cyan-500 ${
+              submitting ? 'opacity-70 cursor-not-allowed' : ''
+            }`}
           >
-            Submit Request
+            {submitting ? 'Submitting…' : 'Submit Request'}
           </button>
         </form>
       )}
@@ -264,68 +237,107 @@ const NewRepairTab = ({ existingRequest, handleSubmitRepair, setActiveTab, handl
   );
 };
 
-// Main Export
+// ---- main
 export default function UserDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [pendingRepair, setPendingRepair] = useState(null);
   const [repairs, setRepairs] = useState([]);
   const [existingRequest, setExistingRequest] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user'));
+  const user = JSON.parse(localStorage.getItem('user')); // your stored login
+  const pollRef = useRef(null);
+  const abortRef = useRef(null);
 
-  useEffect(() => {
-    if (!user) return;
+  const loadRepairs = async (showToast = false) => {
+    if (!user?.email) return;
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
 
-    const allRepairs = JSON.parse(localStorage.getItem('repairs')) || [];
-    const userRepairs = allRepairs.filter(r => r.user === user.email);
-    const pending = userRepairs.find(r => r.status !== 'completed');
-
-    setPendingRepair(pending);
-    setRepairs(userRepairs);
-    setExistingRequest(userRepairs.find(r => r.status === 'pending'));
-  }, [user]);
-
-  const handleSubmitRepair = (device, issue) => {
-    if (!user) return;
-
-    const allRepairs = JSON.parse(localStorage.getItem('repairs')) || [];
-    const allUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
-    const technicians = allUsers.filter(
-      u => u.role === 'employee' && u.category?.toLowerCase() === 'repair technician'
-    );
-
-    const newRepair = {
-      id: Date.now(),
-      user: user.email,
-      username: user.username,
-      device,
-      issue,
-      assignedTo: technicians.length > 0
-        ? technicians[Math.floor(Math.random() * technicians.length)].email
-        : null,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    };
-
-    localStorage.setItem('repairs', JSON.stringify([...allRepairs, newRepair]));
-    setRepairs([...repairs, newRepair]);
-    setExistingRequest(newRepair);
+    try {
+      const res = await fetch(`${API_BASE}/get_user_repairs.php?user_email=${encodeURIComponent(user.email)}`, {
+        signal: ac.signal,
+      });
+      const data = await res.json();
+      if (data.status === 'ok') {
+        setRepairs(data.repairs);
+        const pending = data.repairs.find((r) => r.status !== 'completed' && r.status !== 'cancelled');
+        setPendingRepair(pending || null);
+        setExistingRequest(data.repairs.find((r) => r.status === 'pending') || null);
+        if (showToast) toast.success('Repairs refreshed');
+      } else {
+        if (showToast) toast.error(data.message || 'Failed to load repairs');
+      }
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        if (showToast) toast.error('Network error while loading repairs');
+        // console.error(e);
+      }
+    }
   };
 
-  const handleCancelRepair = (id) => {
-    const allRepairs = JSON.parse(localStorage.getItem('repairs')) || [];
-    const updated = allRepairs.filter(r => r.id !== id);
+  // initial + live polling
+  useEffect(() => {
+    loadRepairs();
+    pollRef.current = setInterval(() => loadRepairs(false), 5000);
+    return () => {
+      clearInterval(pollRef.current);
+      abortRef.current?.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.email]);
 
-    localStorage.setItem('repairs', JSON.stringify(updated));
-    setRepairs(repairs.filter(r => r.id !== id));
-    setExistingRequest(null);
+  const handleSubmitRepair = async (device, issue, onDone) => {
+    if (!user || !device || !issue) return;
+    setSubmitting(true);
+    const t = toast.loading('Submitting repair request…');
+
+    try {
+      const res = await fetch(`${API_BASE}/create_repair.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_email: user.email, username: user.username, device, issue }),
+      });
+      const data = await res.json();
+      if (data.status === 'ok') {
+        toast.success('Repair request created!', { id: t });
+        await loadRepairs();
+        onDone?.();
+      } else {
+        toast.error(data.message || 'Could not create request', { id: t });
+      }
+    } catch (e) {
+      toast.error('Network error while creating request', { id: t });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCancelRepair = async (id) => {
+    const t = toast.loading('Cancelling request…');
+    try {
+      const res = await fetch(`${API_BASE}/cancel_repair.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repair_id: id, user_email: user.email }),
+      });
+      const data = await res.json();
+      if (data.status === 'ok') {
+        toast.success('Request cancelled.', { id: t });
+        await loadRepairs();
+      } else {
+        toast.error(data.message || 'Could not cancel request', { id: t });
+      }
+    } catch (e) {
+      toast.error('Network error while cancelling', { id: t });
+    }
   };
 
   return (
-    
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 to-gray-800 text-white fade-in">
-     <section className="bg-gradient-to-r from-gray-800 to-gray-900 text-center py-16 border-b border-gray-700 w-full">
-      </section>
+      <Toaster position="top-right" />
+      <section className="bg-gradient-to-r from-gray-800 to-gray-900 text-center py-16 border-b border-gray-700 w-full" />
       <main className="flex-grow p-4 sm:p-6">
         <DashboardHeader user={user} />
         <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -341,11 +353,7 @@ export default function UserDashboard() {
         )}
 
         {activeTab === 'repairs' && (
-          <RepairsTab
-            repairs={repairs}
-            setActiveTab={setActiveTab}
-            handleCancelRepair={handleCancelRepair}
-          />
+          <RepairsTab repairs={repairs} setActiveTab={setActiveTab} handleCancelRepair={handleCancelRepair} />
         )}
 
         {activeTab === 'new-repair' && (
@@ -354,10 +362,10 @@ export default function UserDashboard() {
             handleSubmitRepair={handleSubmitRepair}
             setActiveTab={setActiveTab}
             handleCancelRepair={handleCancelRepair}
+            submitting={submitting}
           />
         )}
       </main>
-
     </div>
   );
 }

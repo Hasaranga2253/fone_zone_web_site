@@ -1,5 +1,3 @@
-// src/components/Navbar.jsx
-
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -23,7 +21,9 @@ function Navbar() {
   const [redirectTo, setRedirectTo] = useState('/shop');
   const [searchVisible, setSearchVisible] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false); // NEW
+
+  // --- Use new state for logout confirmation
+  const [showConfirmLogout, setShowConfirmLogout] = useState(false);
 
   // Update cart count
   useEffect(() => {
@@ -62,14 +62,18 @@ function Navbar() {
     setMobileOpen(false);
   };
 
-  const confirmLogout = () => {
+  // New logout handler for stylish modal
+  const handleLogout = () => {
     logout();
     localStorage.removeItem('admin');
     localStorage.removeItem('adminLoggedIn');
     navigate('/home');
     setMobileOpen(false);
-    setShowLogoutConfirm(false);
+    setShowConfirmLogout(false); // Close modal
   };
+
+  // 🔥 NEW: Only show cart if NOT admin
+  const showCart = currentUser && currentUser.role !== 'admin';
 
   return (
     <>
@@ -88,8 +92,10 @@ function Navbar() {
               <NavButton icon={<FaHome />} label="Home" to="/home" scrolled={scrolled} />
               <NavButton icon={<FaStore />} label="Shop" onClick={() => handleProtected('/shop')} scrolled={scrolled} />
               
-              {currentUser && (
-              <NavButton icon={<FaShoppingCart />}label="Cart"onClick={() => handleProtected('/cart')} scrolled={scrolled} badge={cartCount}/>)}
+              {/* 🔥 Only show Cart for non-admins */}
+              {showCart && (
+                <NavButton icon={<FaShoppingCart />} label="Cart" onClick={() => handleProtected('/cart')} scrolled={scrolled} badge={cartCount} />
+              )}
               {currentUser?.role === 'user' && (
                 <NavButton icon={<FaHeadset />} label="Support" onClick={() => navigate('/user/ContactSupport')} scrolled={scrolled} />
               )}
@@ -106,7 +112,7 @@ function Navbar() {
                   currentUser={currentUser}
                   scrolled={scrolled}
                   onDashboard={handleDashboard}
-                  onLogout={() => setShowLogoutConfirm(true)} // Trigger confirmation
+                  onLogout={() => setShowConfirmLogout(true)} // Use new modal state
                 />
               ) : (
                 <AuthButton scrolled={scrolled} onClick={() => setShowLogin(true)} />
@@ -115,7 +121,10 @@ function Navbar() {
 
             {/* Mobile Nav Buttons */}
             <div className="flex md:hidden items-center space-x-4">
-              <IconButton icon={<FaShoppingCart />} scrolled={scrolled} onClick={() => handleProtected('/cart')} badge={cartCount} />
+              {/* 🔥 Only show Cart for non-admins */}
+              {showCart && (
+                <IconButton icon={<FaShoppingCart />} scrolled={scrolled} onClick={() => handleProtected('/cart')} badge={cartCount} />
+              )}
               {currentUser && <IconButton icon={<FaSearch />} scrolled={scrolled} onClick={() => setSearchVisible(!searchVisible)} />}
               <IconButton icon={mobileOpen ? <FaTimes /> : <FaBars />} scrolled={scrolled} onClick={() => setMobileOpen(!mobileOpen)} />
             </div>
@@ -157,7 +166,9 @@ function Navbar() {
               <Link to="/home" onClick={() => setMobileOpen(false)} className="flex items-center p-3 text-gray-700 hover:bg-blue-50 rounded-lg"><FaHome className="mr-3" /> Home</Link>
               <button onClick={() => handleProtected('/shop')} className="flex items-center w-full p-3 text-gray-700 hover:bg-blue-50 rounded-lg"><FaStore className="mr-3" /> Shop</button>
               <Link to="/about" onClick={() => setMobileOpen(false)} className="flex items-center p-3 text-gray-700 hover:bg-blue-50 rounded-lg"><FaInfoCircle className="mr-3" /> About</Link>
-              {currentUser && (
+              
+              {/* 🔥 Only show Cart for non-admins */}
+              {showCart && (
                 <button onClick={() => handleProtected('/cart')} className="flex items-center w-full p-3 text-gray-700 hover:bg-blue-50 rounded-lg"><FaShoppingCart className="mr-3" /> Cart{cartCount > 0 && <span className="ml-auto bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full">{cartCount} items</span>}</button>
               )}
               {currentUser?.role === 'user' && (
@@ -167,7 +178,7 @@ function Navbar() {
                 <button onClick={handleDashboard} className="flex items-center w-full p-3 text-gray-700 hover:bg-blue-50 rounded-lg"><FaUserCog className="mr-3" /> {currentUser.role === 'admin' ? 'Admin Dashboard' : currentUser.role === 'employee' ? 'Employee Dashboard' : 'User Dashboard'}</button>
               )}
               {currentUser ? (
-                <button onClick={() => setShowLogoutConfirm(true)} className="flex items-center w-full p-3 text-gray-700 hover:bg-blue-50 rounded-lg"><FaSignOutAlt className="mr-3" /> Logout</button>
+                <button onClick={() => setShowConfirmLogout(true)} className="flex items-center w-full p-3 text-gray-700 hover:bg-blue-50 rounded-lg"><FaSignOutAlt className="mr-3" /> Logout</button>
               ) : (
                 <button onClick={() => setShowLogin(true)} className="w-full flex items-center justify-center p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"><FaUserCircle className="mr-2" /> Login / Register</button>
               )}
@@ -183,23 +194,24 @@ function Navbar() {
         </div>
       )}
 
-      {/* Logout Confirmation Modal */}
-      {showLogoutConfirm && (
+      {/* Stylish Logout Confirmation Modal */}
+      {showConfirmLogout && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm text-center">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Are you sure you want to log out?</h3>
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-2xl shadow-xl border border-cyan-400 max-w-sm w-full text-center text-white">
+            <h2 className="text-xl font-bold mb-3">Confirm Logout</h2>
+            <p className="text-sm mb-5">Are you sure you want to logout?</p>
             <div className="flex justify-center gap-4">
               <button
-                onClick={confirmLogout}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-white font-semibold"
               >
-                Yes
+                Yes, Logout
               </button>
               <button
-                onClick={() => setShowLogoutConfirm(false)}
-                className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400"
+                onClick={() => setShowConfirmLogout(false)}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded text-white font-semibold"
               >
-                No
+                Cancel
               </button>
             </div>
           </div>

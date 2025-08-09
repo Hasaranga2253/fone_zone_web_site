@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
@@ -9,52 +7,53 @@ function RegisterModal({ onClose, switchToLogin }) {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // Show/hide state
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [dob, setDob] = useState('');
   const [gender, setGender] = useState('male');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const navigate = useNavigate();
-  const { login } = useAuth();
-
-  const handleRegister = (e) => {
+  // Submit registration to backend
+  const handleRegister = async (e) => {
     e.preventDefault();
 
+    // Basic validations
     if (!fullName.trim()) return toast.error('❌ Full name is required.');
     if (!username.trim()) return toast.error('❌ Username is required.');
-    if (!email || !password) return toast.error('❌ Email and password are required.');
+    if (!email.trim()) return toast.error('❌ Email is required.');
+    if (!password.trim()) return toast.error('❌ Password is required.');
+    if (password.length < 6) return toast.error('❌ Password must be at least 6 characters.');
+    if (password !== confirmPassword) return toast.error('❌ Passwords do not match.');
 
-    const newUser = {
-      fullName,
-      username,
-      email,
-      password,
-      dob,
-      gender,
-      role: 'user',
-    };
+    setLoading(true);
+    try {
+      const res = await fetch('http://localhost/fonezone/register.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName,
+          username,
+          email,
+          password,
+          dob,
+          gender,
+          role: 'user', // Always 'user' on registration
+        }),
+      });
 
-    const existingUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
-    if (existingUsers.find((user) => user.email === email)) {
-      return toast.error('❌ This email is already registered.');
+      const data = await res.json();
+
+      if (data.success) {
+        toast.success('🎉 Registration successful! Please login.');
+        onClose();
+        switchToLogin && switchToLogin();
+      } else {
+        toast.error(data.error || '❌ Registration failed.');
+      }
+    } catch (err) {
+      toast.error('❌ Server error. Please try again later.');
     }
-
-    localStorage.setItem('registeredUsers', JSON.stringify([...existingUsers, newUser]));
-    login(newUser);
-    toast.success('✅ Registered and logged in!');
-    onClose();
-
-    const updatedUser = { ...newUser };
-    if (updatedUser.role === 'employee') {
-      const cat = updatedUser.category?.toLowerCase();
-      if (cat?.includes('repair')) navigate('/employee/repairs');
-      else if (cat?.includes('delivery')) navigate('/employee/delivery');
-      else if (cat?.includes('support')) navigate('/employee/support');
-      else navigate('/employee/dashboard');
-    } else if (updatedUser.role === 'admin') {
-      navigate('/admin/dashboard');
-    } else {
-      navigate('/user/dashboard');
-    }
+    setLoading(false);
   };
 
   return (
@@ -64,6 +63,7 @@ function RegisterModal({ onClose, switchToLogin }) {
         <button
           onClick={onClose}
           className="absolute top-2 right-3 text-white/80 hover:text-red-400 text-xl font-bold"
+          aria-label="Close Register"
         >
           &times;
         </button>
@@ -73,60 +73,100 @@ function RegisterModal({ onClose, switchToLogin }) {
         <form onSubmit={handleRegister} className="space-y-4">
           <input
             type="text"
+            name="fullName"
+            id="fullName"
             placeholder="Full Name"
-            className="w-full px-4 py-2 rounded bg-white/20 text-white placeholder-white/70 outline-none focus:ring-2 focus:ring-cyan-500"
+            className="form-input"
+            autoComplete="name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             required
+            disabled={loading}
           />
+
           <input
             type="text"
+            name="username"
+            id="username"
             placeholder="Username"
-            className="w-full px-4 py-2 rounded bg-white/20 text-white placeholder-white/70 outline-none focus:ring-2 focus:ring-cyan-500"
+            className="form-input"
+            autoComplete="username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
+            disabled={loading}
           />
+
           <input
             type="email"
+            name="email"
+            id="email"
             placeholder="Email"
-            className="w-full px-4 py-2 rounded bg-white/20 text-white placeholder-white/70 outline-none focus:ring-2 focus:ring-cyan-500"
+            className="form-input"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            disabled={loading}
           />
 
-          {/* Password field with eye icon */}
+          {/* Password Field with Toggle */}
           <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}
+              name="password"
+              id="password"
               placeholder="Password"
-              className="w-full px-4 py-2 rounded bg-white/20 text-white placeholder-white/70 outline-none focus:ring-2 focus:ring-cyan-500 pr-10"
+              className="form-input pr-10"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={loading}
             />
             <button
               type="button"
+              className="eye-icon"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-cyan-400"
+              disabled={loading}
+              tabIndex={-1}
+              aria-label="Toggle password"
             >
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </button>
           </div>
 
-          {/* DOB + Gender Row */}
+          <input
+            type={showPassword ? 'text' : 'password'}
+            name="confirmPassword"
+            id="confirmPassword"
+            placeholder="Confirm Password"
+            className="form-input"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            disabled={loading}
+          />
+
+          {/* DOB & Gender */}
           <div className="flex gap-4">
             <input
               type="date"
-              className="w-full px-4 py-2 rounded bg-white/20 text-white outline-none focus:ring-2 focus:ring-cyan-500"
+              name="dob"
+              id="dob"
+              className="form-input"
               value={dob}
               onChange={(e) => setDob(e.target.value)}
+              disabled={loading}
             />
             <select
-              className="w-full px-4 py-2 rounded bg-white/20 text-white outline-none focus:ring-2 focus:ring-cyan-500"
+              name="gender"
+              id="gender"
+              className="form-input"
               value={gender}
               onChange={(e) => setGender(e.target.value)}
+              disabled={loading}
             >
               <option value="male">Male</option>
               <option value="female">Female</option>
@@ -136,9 +176,10 @@ function RegisterModal({ onClose, switchToLogin }) {
 
           <button
             type="submit"
-            className="w-full py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded text-white font-semibold transition"
+            className="submit-btn"
+            disabled={loading}
           >
-            Sign Up
+            {loading ? 'Registering...' : 'Sign Up'}
           </button>
         </form>
 

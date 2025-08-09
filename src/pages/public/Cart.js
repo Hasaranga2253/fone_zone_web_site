@@ -1,4 +1,3 @@
-// src/pages/public/Cart.js
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -7,58 +6,80 @@ import { useAuth } from '../../context/AuthContext';
 import { FaTrash, FaPlus, FaMinus, FaShoppingCart, FaLock } from 'react-icons/fa';
 
 function Cart() {
-  const [cartItems, setCartItems] = useState([]);
-  const navigate = useNavigate();
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
+  const [cartItems, setCartItems] = useState([]);
+
+  // 🟦 Load cart from PHP backend
+  const loadCart = () => {
+    if (!currentUser) {
+      setCartItems([]);
+      return;
+    }
+    fetch(`http://localhost/Fonezone/managecart.php?action=get&user=${currentUser.email}`)
+      .then(res => res.json())
+      .then(data => setCartItems(data.cart || []));
+  };
 
   useEffect(() => {
-    if (!currentUser) return;
-    const userCartKey = `cart_${currentUser.email}`;
-    const storedCart = JSON.parse(localStorage.getItem(userCartKey)) || [];
-    setCartItems(storedCart);
+    loadCart();
+    // Optionally reload on focus (refresh tab = get latest cart)
+    window.addEventListener('focus', loadCart);
+    return () => window.removeEventListener('focus', loadCart);
+    // eslint-disable-next-line
   }, [currentUser]);
 
-  const updateLocalStorage = (updated) => {
-    const userCartKey = `cart_${currentUser.email}`;
-    localStorage.setItem(userCartKey, JSON.stringify(updated));
+  // 🟦 Remove item from cart (backend)
+  const handleRemove = (product_id) => {
+    fetch('http://localhost/Fonezone/managecart.php?action=remove', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_email: currentUser.email, product_id })
+    })
+      .then(res => res.json())
+      .then(() => {
+        toast.info('Item removed from cart', { theme: 'dark' });
+        loadCart();
+      });
   };
 
-  const handleRemove = (id) => {
-    const updated = cartItems.filter((item) => item.id !== id);
-    setCartItems(updated);
-    updateLocalStorage(updated);
-    toast.info('Item removed from cart', { theme: 'dark' });
+  // 🟦 Change quantity in cart (backend)
+  const handleQuantityChange = (product_id, delta) => {
+    const current = cartItems.find((item) => item.product_id === product_id);
+    const newQty = Math.max(1, (current?.quantity || 1) + delta);
+    fetch('http://localhost/Fonezone/managecart.php?action=update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_email: currentUser.email, product_id, quantity: newQty })
+    })
+      .then(res => res.json())
+      .then(() => loadCart());
   };
 
-  const handleQuantityChange = (id, delta) => {
-    const updated = cartItems.map((item) =>
-      item.id === id
-        ? { ...item, quantity: Math.max(1, (item.quantity || 1) + delta) }
-        : item
-    );
-    setCartItems(updated);
-    updateLocalStorage(updated);
-  };
-
+  // 🟦 Clear entire cart (backend)
   const handleClearCart = () => {
-    setCartItems([]);
-    const userCartKey = `cart_${currentUser.email}`;
-    localStorage.removeItem(userCartKey);
-    toast.warn('Cart cleared!', { theme: 'dark' });
+    fetch('http://localhost/Fonezone/managecart.php?action=clear', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_email: currentUser.email })
+    })
+      .then(res => res.json())
+      .then(() => {
+        toast.warn('Cart cleared!', { theme: 'dark' });
+        loadCart();
+      });
   };
 
+  // Calculations
   const subtotal = cartItems.reduce((sum, item) => {
-    const cleanPrice =
+    let price =
       typeof item.price === 'number'
         ? item.price
-        : parseFloat(item.price.toString().replace(/[^\d.-]/g, '')) || 0;
-    const qty = item.quantity || 1;
-    return sum + cleanPrice * qty;
+        : parseFloat(item.price && item.price.toString().replace(/[^\d.-]/g, '')) || 0;
+    return sum + price * (item.quantity || 1);
   }, 0);
-
-  const tax = subtotal * 0.05;
-  const discount = 0;
-  const total = subtotal + tax - discount;
+  const tax = Math.round(subtotal * 0.10);
+  const total = subtotal + tax;
 
   // Animation variants
   const fadeIn = {
@@ -67,6 +88,25 @@ function Cart() {
   };
   const stagger = { visible: { transition: { staggerChildren: 0.15 } } };
 
+  // Show login warning if not logged in
+  if (!currentUser) {
+    return (
+      <motion.div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-b from-gray-900 to-gray-950 text-white">
+        <FaLock className="text-6xl text-cyan-400 mb-6" />
+        <h2 className="text-3xl font-bold mb-2">Sign In Required</h2>
+        <p className="text-gray-400 mb-6 text-center">
+          You must be logged in to view your shopping cart.
+        </p>
+        <button
+          onClick={() => navigate('/login')}
+          className="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg font-medium hover:from-blue-500 hover:to-cyan-500"
+        >
+          Login
+        </button>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 text-white flex flex-col"
@@ -74,7 +114,7 @@ function Cart() {
       animate="visible"
       variants={stagger}
     >
-      {/* Hero Section with border-x like others */}
+      {/* Hero Section */}
       <motion.section
         className="bg-gradient-to-r from-gray-800 to-gray-900 text-center py-16 border-b border-gray-700 w-full"
         variants={fadeIn}
@@ -123,23 +163,26 @@ function Cart() {
             <div className="lg:col-span-2 space-y-4">
               {cartItems.map((item) => (
                 <motion.div
-                  key={item.id}
+                  key={item.id || item.product_id}
                   variants={fadeIn}
                   className="flex flex-col md:flex-row items-center bg-gray-800/50 backdrop-blur-sm p-4 rounded-xl border border-gray-700 hover:border-blue-500 transition-all"
                 >
                   <div className="w-32 h-32 flex-shrink-0 flex items-center justify-center bg-gray-700 rounded-lg p-2">
                     <img
                       src={item.image || '/images/fallback.jpg'}
-                      alt={item.name}
+                      alt={item.product_name || item.name}
                       className="max-h-24 max-w-24 object-contain"
+                      onError={e => { e.target.src = '/images/fallback.jpg'; }}
                     />
                   </div>
                   <div className="flex-1 md:ml-6 mt-4 md:mt-0 text-center md:text-left">
                     <div className="flex justify-between items-start">
-                      <h3 className="text-lg font-semibold">{item.name}</h3>
+                      <h3 className="text-lg font-semibold">{item.product_name || item.name}</h3>
                       <button
-                        onClick={() => handleRemove(item.id)}
+                        onClick={() => handleRemove(item.product_id)}
                         className="text-red-400 hover:text-red-300"
+                        title="Remove"
+                        aria-label="Remove item"
                       >
                         <FaTrash />
                       </button>
@@ -151,8 +194,9 @@ function Cart() {
                     </p>
                     <div className="flex items-center justify-center md:justify-start mt-4 gap-4">
                       <button
-                        onClick={() => handleQuantityChange(item.id, -1)}
+                        onClick={() => handleQuantityChange(item.product_id, -1)}
                         className="w-8 h-8 flex items-center justify-center bg-gray-700 rounded-full hover:bg-gray-600"
+                        aria-label="Decrease quantity"
                       >
                         <FaMinus className="text-xs" />
                       </button>
@@ -160,8 +204,9 @@ function Cart() {
                         {item.quantity || 1}
                       </span>
                       <button
-                        onClick={() => handleQuantityChange(item.id, 1)}
+                        onClick={() => handleQuantityChange(item.product_id, 1)}
                         className="w-8 h-8 flex items-center justify-center bg-gray-700 rounded-full hover:bg-gray-600"
+                        aria-label="Increase quantity"
                       >
                         <FaPlus className="text-xs" />
                       </button>
@@ -174,6 +219,7 @@ function Cart() {
                 <button
                   onClick={handleClearCart}
                   className="px-4 py-2 bg-red-600/30 hover:bg-red-600/40 text-red-400 rounded-lg border border-red-500"
+                  aria-label="Clear entire cart"
                 >
                   Clear Entire Cart
                 </button>
@@ -193,13 +239,9 @@ function Cart() {
                   <span className="text-gray-400">Subtotal:</span>
                   <span className="font-medium">Rs. {subtotal.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Tax (5%):</span>
-                  <span className="font-medium">Rs. {tax.toLocaleString()}</span>
-                </div>
                 <div className="flex justify-between text-red-400">
-                  <span>Discount:</span>
-                  <span>- Rs. {discount.toLocaleString()}</span>
+                  <span className="text-gray-400">Tax (10%):</span>
+                  <span className="font-medium">Rs. {tax.toLocaleString()}</span>
                 </div>
                 <div className="border-t border-gray-700 pt-3 mt-3">
                   <div className="flex justify-between font-bold text-lg">

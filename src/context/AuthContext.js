@@ -5,8 +5,8 @@ export const AuthContext = createContext();
 
 // 2️⃣ Provider component
 export const AuthProvider = ({ children }) => {
+  // Load user from localStorage safely at mount
   const [currentUser, setCurrentUser] = useState(() => {
-    // Load user from localStorage safely
     try {
       return JSON.parse(localStorage.getItem('user')) || null;
     } catch {
@@ -18,9 +18,8 @@ export const AuthProvider = ({ children }) => {
   const login = (user) => {
     setCurrentUser(user);
     localStorage.setItem('user', JSON.stringify(user));
-
-    // Only for admin: mark admin session
-    if (user.role === 'admin') {
+    // For admin, mark session separately
+    if (user?.role === 'admin') {
       localStorage.setItem('adminLoggedIn', 'true');
     }
   };
@@ -30,17 +29,38 @@ export const AuthProvider = ({ children }) => {
     setCurrentUser(null);
     localStorage.removeItem('user');
     localStorage.removeItem('adminLoggedIn');
+    // (Optional) clear more keys here if needed
   };
 
-  // 🔁 Sync with localStorage on mount (optional rehydration)
+  // 🔁 Sync with localStorage if changed elsewhere (multi-tab support)
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (stored) {
+    const syncUser = () => {
       try {
-        setCurrentUser(JSON.parse(stored));
+        const stored = localStorage.getItem('user');
+        if (stored) {
+          setCurrentUser(JSON.parse(stored));
+        } else {
+          setCurrentUser(null);
+        }
       } catch {
+        setCurrentUser(null);
         localStorage.removeItem('user');
       }
+    };
+    window.addEventListener('storage', syncUser);
+    return () => window.removeEventListener('storage', syncUser);
+  }, []);
+
+  // (Optional) Sync on mount as well
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('user');
+      if (stored) {
+        setCurrentUser(JSON.parse(stored));
+      }
+    } catch {
+      setCurrentUser(null);
+      localStorage.removeItem('user');
     }
   }, []);
 
@@ -51,5 +71,5 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// 3️⃣ Custom hook for convenience
+// 3️⃣ Custom hook for easy usage
 export const useAuth = () => useContext(AuthContext);

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function EmployeeDashboard() {
   const [employee, setEmployee] = useState(null);
+  const [showConfirmLogout, setShowConfirmLogout] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -27,7 +28,9 @@ export default function EmployeeDashboard() {
         style={{ backgroundImage: "url('/images/fallback.jpg')" }}
       />
       <div className="w-full max-w-3xl rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 px-10 py-8 text-center shadow-lg mb-12">
-        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-2  gradient-text fade-in">Employee Dashboard</h1>
+        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-2  gradient-text fade-in">
+          Employee Dashboard
+        </h1>
 
         {employee ? (
           <>
@@ -43,19 +46,13 @@ export default function EmployeeDashboard() {
               </p>
             )}
 
-            {/* Buttons Row */}
+            {/* Buttons Row (only Logout) */}
             <div className="mt-6 flex flex-col sm:flex-row justify-center items-center gap-4">
               <button
-                onClick={handleLogout}
+                onClick={() => setShowConfirmLogout(true)}
                 className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-full shadow-md transition-all"
               >
                 Logout
-              </button>
-              <button
-                onClick={() => navigate('/')}
-                className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-full shadow-md transition-all"
-              >
-                Go to Home
               </button>
             </div>
           </>
@@ -110,6 +107,30 @@ export default function EmployeeDashboard() {
           </div>
         )}
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {showConfirmLogout && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-2xl shadow-xl border border-cyan-400 max-w-sm w-full text-center text-white">
+            <h2 className="text-xl font-bold mb-3">Confirm Logout</h2>
+            <p className="text-sm mb-5">Are you sure you want to logout?</p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-white font-semibold"
+              >
+                Yes, Logout
+              </button>
+              <button
+                onClick={() => setShowConfirmLogout(false)}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded text-white font-semibold"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

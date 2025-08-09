@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import {
   FaCartPlus,
   FaHeart,
+  FaRegHeart,
   FaSearch,
   FaStar,
   FaFilter,
@@ -16,7 +17,13 @@ function Shop() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
-  // State Management
+  // ---- API endpoints (CRA: set REACT_APP_API_BASE in .env.local if needed) ----
+  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost';
+  const PRODUCTS_API = `${API_BASE}/Fonezone/manageproducts.php?action=get`;
+  const CART_ADD_API = `${API_BASE}/Fonezone/managecart.php?action=add`;
+  const WISHLIST_API = `${API_BASE}/Fonezone/wishlist.php`; // wishlist.php
+
+  // State
   const [products, setProducts] = useState([]);
   const [quickView, setQuickView] = useState(null);
   const [activeCategory, setActiveCategory] = useState('All');
@@ -25,7 +32,8 @@ function Shop() {
   const [priceRange, setPriceRange] = useState([0, 500000]);
   const [currentPage, setCurrentPage] = useState(1);
   const [notifyMessage, setNotifyMessage] = useState('');
-  const [userRatings, setUserRatings] = useState({});
+  const [busyId, setBusyId] = useState(null);         // per-item in-flight lock
+  const [wishIds, setWishIds] = useState(new Set());  // O(1) membership check
   const productsPerPage = 12;
 
   const categories = ['All', 'Phones', 'Accessories', 'Tablets', 'Repair Items'];
@@ -38,32 +46,74 @@ function Shop() {
   };
   const stagger = { visible: { transition: { staggerChildren: 0.15 } } };
 
-  // Load products and ratings
-  const loadProducts = () => {
-    const storedProducts = JSON.parse(localStorage.getItem('products')) || [];
-    setProducts(storedProducts);
-
-    if (currentUser) {
-      const storedRatings = JSON.parse(localStorage.getItem(`ratings_${currentUser.email}`)) || {};
-      setUserRatings(storedRatings);
-    }
+  // Helpers
+  const formatPrice = (price) => `Rs. ${Number(price ?? 0).toLocaleString('en-US')}`;
+  const showNotification = (message) => {
+    setNotifyMessage(message);
+    setTimeout(() => setNotifyMessage(''), 3000);
   };
+  const inWishlist = (id) => wishIds.has(id);
 
+  // Mounted guard
+  const mountedRef = useRef(true);
   useEffect(() => {
-    loadProducts();
-    const onStorageChange = () => loadProducts();
-    window.addEventListener('storage', onStorageChange);
-    return () => window.removeEventListener('storage', onStorageChange);
-  }, [currentUser]);
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
-  // Filtering and pagination
+  // ---------- Data loaders (memoized to satisfy exhaustive-deps) ----------
+  const loadProducts = useCallback(() => {
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch(PRODUCTS_API, { signal: controller.signal, cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!mountedRef.current) return;
+        setProducts(Array.isArray(data.products) ? data.products : []);
+      } catch (err) {
+        if (err?.name !== 'AbortError') setProducts([]);
+      }
+    })();
+    return () => controller.abort();
+  }, [PRODUCTS_API]);
+
+  const loadWishlist = useCallback(() => {
+    if (!currentUser?.email) {
+      setWishIds(new Set());
+      return () => {};
+    }
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch(
+          `${WISHLIST_API}?email=${encodeURIComponent(currentUser.email)}`,
+          { signal: controller.signal, cache: 'no-store' }
+        );
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!mountedRef.current) return;
+        const ids = new Set((data.items || []).map(i => i.id));
+        setWishIds(ids);
+      } catch (err) {
+        if (err?.name !== 'AbortError') setWishIds(new Set());
+      }
+    })();
+    return () => controller.abort();
+  }, [WISHLIST_API, currentUser?.email]);
+
+  // Effects
+  useEffect(loadProducts, [loadProducts]);
+  useEffect(loadWishlist, [loadWishlist]);
+
+  // Filtering + pagination
   const filteredProducts = products.filter(
     (p) =>
       (activeCategory === 'All' || p.category === activeCategory) &&
-      p.price >= priceRange[0] &&
-      p.price <= priceRange[1]
+      Number(p.price ?? 0) >= priceRange[0] &&
+      Number(p.price ?? 0) <= priceRange[1]
   );
-  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage) || 1;
   const displayedProducts = filteredProducts.slice(
     (currentPage - 1) * productsPerPage,
     currentPage * productsPerPage
@@ -73,37 +123,41 @@ function Shop() {
     setCurrentPage(1);
   }, [activeCategory, priceRange]);
 
-  // Helpers
-  const formatPrice = (price) => `Rs. ${price.toLocaleString('en-US')}`;
-  const showNotification = (message) => {
-    setNotifyMessage(message);
-    setTimeout(() => setNotifyMessage(''), 3000);
+  // ---------- Actions ----------
+  const handleAddToCart = async (product) => {
+    if (!currentUser) return showNotification('Please log in to add to your cart.');
+    if (busyId) return;
+    setBusyId(product.id);
+
+    try {
+      const res = await fetch(CART_ADD_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_email: currentUser.email,
+          product_id: product.id,
+          product_name: product.name,
+          price: Number(product.price ?? 0),
+          image: product.image,
+          quantity: 1,
+        }),
+      });
+      const data = await res.json();
+      if (data?.success) showNotification(`${product.name} added to cart!`);
+      else showNotification(data?.error || 'Failed to add to cart.');
+    } catch {
+      showNotification('Failed to add to cart.');
+    } finally {
+      setBusyId(null);
+    }
   };
 
-  // Cart handler
-  const handleAddToCart = (product) => {
-    if (!currentUser) return alert('Please log in to add to your cart.');
-    const key = `cart_${currentUser.email}`;
-    const cart = JSON.parse(localStorage.getItem(key)) || [];
-    const exists = cart.find((i) => i.id === product.id);
-    const updated = exists
-      ? cart.map((i) =>
-          i.id === product.id ? { ...i, quantity: (i.quantity || 1) + 1 } : i
-        )
-      : [...cart, { ...product, quantity: 1 }];
-    localStorage.setItem(key, JSON.stringify(updated));
-    showNotification(`${product.name} has been added to your cart!`);
-  };
+  const handleToggleWishlist = async (product, e) => {
+    if (!currentUser) return showNotification('Please log in to manage your wishlist.');
+    if (busyId) return;
 
-  // Wishlist handler (with flying hearts)
-  const handleAddToWishlist = (product, e) => {
-    if (!currentUser) return alert('Please log in to save to wishlist.');
-    const key = `wishlist_${currentUser.email}`;
-    const wishlist = JSON.parse(localStorage.getItem(key)) || [];
-    if (!wishlist.find((i) => i.id === product.id)) {
-      localStorage.setItem(key, JSON.stringify([...wishlist, product]));
-
-      // Heart animation
+    // Heart animation
+    if (e?.currentTarget) {
       const rect = e.currentTarget.getBoundingClientRect();
       const hearts = Array.from({ length: 5 }, (_, i) => ({
         id: `${Date.now()}-${i}`,
@@ -113,30 +167,59 @@ function Shop() {
       }));
       setFlyingHearts(hearts);
       setTimeout(() => setFlyingHearts([]), 1000);
+    }
 
-      showNotification(`${product.name} has been added to your wishlist!`);
+    const wasIn = inWishlist(product.id);
+
+    // Optimistic UI
+    const next = new Set(wishIds);
+    wasIn ? next.delete(product.id) : next.add(product.id);
+    setWishIds(next);
+    setBusyId(product.id);
+
+    const payload = wasIn
+      ? { action: 'remove', email: currentUser.email, item_id: product.id }
+      : {
+          action: 'add',
+          email: currentUser.email,
+          item: {
+            id: product.id,
+            name: product.name,
+            image: product.image,
+            price: product.price,
+            quantity: 1,
+          },
+        };
+
+    try {
+      const res = await fetch(WISHLIST_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!data?.success && data?.error !== 'Item already in wishlist') {
+        // rollback by reloading
+        loadWishlist();
+        showNotification(data?.error || 'Wishlist update failed.');
+      } else {
+        showNotification(wasIn ? 'Removed from wishlist.' : 'Added to wishlist!');
+      }
+    } catch {
+      loadWishlist(); // rollback
+      showNotification('Wishlist update failed.');
+    } finally {
+      setBusyId(null);
     }
   };
 
-  // Ratings handler
-  const handleRateProduct = (productId, rating) => {
-    if (!currentUser) return alert('Please log in to rate products.');
-    const updatedRatings = { ...userRatings, [productId]: rating };
-    setUserRatings(updatedRatings);
-    localStorage.setItem(`ratings_${currentUser.email}`, JSON.stringify(updatedRatings));
-    showNotification(`You rated this product ${rating} star${rating > 1 ? 's' : ''}!`);
+  const handleRateProduct = () => {
+    showNotification('Rating feature will be available soon via backend!');
   };
 
-  const getAverageRating = (productId, defaultRating) => {
-    let sum = 0;
-    let count = 0;
-    if (userRatings[productId]) {
-      sum += userRatings[productId];
-      count++;
-    }
-    return count > 0 ? (sum / count).toFixed(1) : defaultRating || 0;
-  };
+  const getAverageRating = (_id, defaultRating) => defaultRating || 0;
 
+  // ---------- UI ----------
   return (
     <motion.div
       className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 text-white relative p-0"
@@ -144,7 +227,7 @@ function Shop() {
       animate="visible"
       variants={stagger}
     >
-      {/* Flying Hearts Animation */}
+      {/* Flying Hearts */}
       <AnimatePresence>
         {flyingHearts.map((heart) => (
           <motion.div
@@ -152,12 +235,7 @@ function Shop() {
             className="absolute text-pink-500 z-50 pointer-events-none"
             style={{ top: heart.y, left: heart.x, fontSize: `${heart.size}px` }}
             initial={{ opacity: 1, scale: 0.5, x: '-50%', y: '-50%' }}
-            animate={{
-              opacity: 0,
-              scale: 1.5,
-              y: '-200%',
-              x: `${Math.random() * 100 - 50}%`,
-            }}
+            animate={{ opacity: 0, scale: 1.5, y: '-200%', x: `${Math.random() * 100 - 50}%` }}
             transition={{ duration: 1, ease: 'easeOut' }}
           >
             <FaHeart />
@@ -165,7 +243,7 @@ function Shop() {
         ))}
       </AnimatePresence>
 
-      {/* Notification Popup */}
+      {/* Notification */}
       <AnimatePresence>
         {notifyMessage && (
           <motion.div
@@ -194,7 +272,6 @@ function Shop() {
               exit={{ scale: 0.9, y: 20, opacity: 0 }}
               className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl border border-gray-700 w-full max-w-2xl overflow-hidden shadow-2xl relative"
             >
-              {/* Close Button */}
               <button
                 onClick={() => setQuickView(null)}
                 className="absolute top-4 right-4 z-10 bg-gray-700 hover:bg-gray-600 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
@@ -202,43 +279,35 @@ function Shop() {
                 <FaTimes className="text-gray-300" />
               </button>
 
-              {/* Modal Content */}
               <div className="grid grid-cols-1 md:grid-cols-2">
-                {/* Product Image */}
                 <div className="relative bg-gradient-to-br from-gray-900 to-gray-950 p-8 flex items-center justify-center">
                   <img
                     src={quickView.image || fallbackImage}
                     alt={quickView.name}
                     className="h-56 object-contain transition-transform duration-500 hover:scale-105"
+                    onError={(e) => (e.currentTarget.src = fallbackImage)}
                   />
                   <div className="absolute top-4 left-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-3 py-1 rounded-full text-xs font-bold">
-                    {quickView.category}
+                    {quickView.category || 'Product'}
                   </div>
                 </div>
 
-                {/* Product Details */}
                 <div className="p-6">
                   <h2 className="text-2xl font-bold mb-2">{quickView.name}</h2>
-
-                  {/* Ratings */}
                   <div className="flex items-center mb-4 gap-2">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <FaStar
                         key={star}
                         onClick={() => handleRateProduct(quickView.id, star)}
                         className={`cursor-pointer ${
-                          star <= (userRatings[quickView.id] || 0)
-                            ? 'text-yellow-400'
-                            : 'text-gray-600'
+                          star <= (quickView.rating || 0) ? 'text-yellow-400' : 'text-gray-600'
                         }`}
                       />
                     ))}
                     <span className="text-gray-400 text-sm">
-                      Your Rating: {userRatings[quickView.id] || 'N/A'}
+                      Average: {quickView.rating || 'N/A'}
                     </span>
                   </div>
-
-                  {/* Price & Description */}
                   <p className="text-cyan-400 text-2xl font-bold mb-4">
                     {formatPrice(quickView.price)}
                   </p>
@@ -246,8 +315,6 @@ function Shop() {
                     <h3 className="text-gray-300 font-medium mb-2">Description</h3>
                     <p className="text-gray-400">{quickView.description || 'No description available.'}</p>
                   </div>
-
-                  {/* Actions */}
                   <div className="flex flex-col sm:flex-row gap-3">
                     <motion.button
                       whileHover={{ scale: 1.03 }}
@@ -264,12 +331,15 @@ function Shop() {
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.97 }}
                       onClick={(e) => {
-                        handleAddToWishlist(quickView, e);
+                        handleToggleWishlist(quickView, e);
                         setQuickView(null);
                       }}
-                      className="flex-1 py-3 bg-gradient-to-r from-pink-600 to-rose-700 rounded-lg flex items-center justify-center gap-2"
+                      disabled={busyId === quickView?.id}
+                      className={`flex-1 py-3 rounded-lg flex items-center justify-center gap-2 disabled:opacity-60
+                        ${inWishlist(quickView?.id) ? 'bg-pink-600' : 'bg-gradient-to-r from-pink-600 to-rose-700'}`}
                     >
-                      <FaHeart /> Add to Wishlist
+                      {inWishlist(quickView?.id) ? <FaHeart /> : <FaRegHeart />}
+                      {inWishlist(quickView?.id) ? 'In Wishlist' : 'Add to Wishlist'}
                     </motion.button>
                   </div>
                 </div>
@@ -279,7 +349,7 @@ function Shop() {
         )}
       </AnimatePresence>
 
-      {/* Hero Section */}
+      {/* Hero */}
       <motion.section
         className="bg-gradient-to-r from-gray-800 to-gray-900 text-center py-16 border-b border-gray-700 w-full"
         variants={fadeIn}
@@ -292,16 +362,14 @@ function Shop() {
         </motion.p>
       </motion.section>
 
-      {/* Main Content */}
+      {/* Main */}
       <motion.div className="w-full mx-auto flex gap-6 px-6 mt-8 min-h-screen" variants={stagger}>
         {/* Sidebar */}
         <motion.aside
           className="w-64 sticky top-24 h-fit flex-col bg-gray-900/80 border border-gray-800 rounded-xl p-4 hidden lg:flex"
           variants={fadeIn}
         >
-          {/* Filters & Category */}
           <div>
-            {/* Price Filter Toggle */}
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="flex items-center gap-2 w-full px-4 py-2 mb-4 bg-gradient-to-r from-indigo-600 to-purple-700 rounded-lg"
@@ -309,15 +377,13 @@ function Shop() {
               <FaFilter /> Price Filter
             </button>
 
-            {/* Wishlist Shortcut */}
             <button
-              onClick={() => (currentUser ? navigate('/wishlist') : alert('Log in to view wishlist'))}
+              onClick={() => (currentUser ? navigate('/wishlist') : showNotification('Log in to view wishlist'))}
               className="flex items-center justify-center gap-2 w-full px-4 py-2 mb-6 bg-gradient-to-r from-pink-600 to-rose-700 rounded-lg shadow-md"
             >
               <FaHeart /> <span className="hidden md:inline">Wishlist</span>
             </button>
 
-            {/* Categories */}
             <div className="flex flex-col gap-3 mb-6">
               {categories.map((cat) => (
                 <motion.button
@@ -336,7 +402,6 @@ function Shop() {
               ))}
             </div>
 
-            {/* Price Filter Slider */}
             {showFilters && (
               <div className="bg-gray-800/60 backdrop-blur-md border border-gray-700 p-4 rounded-lg">
                 <h3 className="text-lg font-semibold mb-3">Price Range</h3>
@@ -346,7 +411,7 @@ function Shop() {
                   max="500000"
                   step="10000"
                   value={priceRange[1]}
-                  onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
+                  onChange={(e) => setPriceRange([0, parseInt(e.target.value, 10)])}
                   className="w-full accent-blue-500"
                 />
                 <div className="text-gray-400 text-sm mt-1">
@@ -365,29 +430,33 @@ function Shop() {
             ) : (
               displayedProducts.map((product) => {
                 const avgRating = getAverageRating(product.id, product.rating);
+                const isBusy = busyId === product.id;
                 return (
                   <motion.div
                     key={product.id}
                     variants={fadeIn}
                     className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-lg group hover:shadow-xl transition"
                   >
-                    {/* Product Image & Quick Actions */}
                     <div className="relative h-56 flex items-center justify-center p-4 bg-gray-900">
                       <img
                         src={product.image || fallbackImage}
                         alt={product.name}
                         className="h-44 object-contain transition-transform group-hover:scale-110"
-                        onError={(e) => (e.target.src = fallbackImage)}
+                        onError={(e) => (e.currentTarget.src = fallbackImage)}
                       />
                       <div className="absolute top-4 right-4 flex flex-col gap-2">
-                        {/* Wishlist Button */}
                         <button
-                          onClick={(e) => handleAddToWishlist(product, e)}
-                          className="bg-gray-800/70 hover:bg-pink-600 w-10 h-10 rounded-full flex items-center justify-center"
+                          onClick={(e) => handleToggleWishlist(product, e)}
+                          disabled={isBusy}
+                          className={`w-10 h-10 rounded-full flex items-center justify-center disabled:opacity-60
+                            ${inWishlist(product.id) ? 'bg-pink-600' : 'bg-gray-800/70 hover:bg-pink-600'}`}
                         >
-                          <FaHeart className="text-pink-400" />
+                          {inWishlist(product.id) ? (
+                            <FaHeart className="text-white" />
+                          ) : (
+                            <FaRegHeart className="text-pink-400" />
+                          )}
                         </button>
-                        {/* Quick View Button */}
                         <button
                           onClick={() => setQuickView(product)}
                           className="bg-gray-800/70 hover:bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center"
@@ -397,9 +466,7 @@ function Shop() {
                       </div>
                     </div>
 
-                    {/* Product Details */}
                     <div className="p-4">
-                      {/* Rating */}
                       <div className="flex items-center mb-1">
                         {[...Array(5)].map((_, i) => (
                           <FaStar
@@ -410,14 +477,13 @@ function Shop() {
                         <span className="ml-2 text-gray-400 text-sm">{avgRating}</span>
                       </div>
 
-                      {/* Name & Price */}
                       <h3 className="font-bold text-lg truncate">{product.name}</h3>
                       <p className="text-cyan-400 font-bold text-xl mb-3">{formatPrice(product.price)}</p>
 
-                      {/* Add to Cart */}
                       <button
                         onClick={() => handleAddToCart(product)}
-                        className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 py-2 rounded-lg flex items-center justify-center gap-2"
+                        disabled={isBusy}
+                        className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 py-2 rounded-lg flex items-center justify-center gap-2 disabled:opacity-60"
                       >
                         <FaCartPlus /> Add to Cart
                       </button>
@@ -428,7 +494,6 @@ function Shop() {
             )}
           </motion.div>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <motion.div className="mt-10 flex justify-center gap-4 items-center pb-12" variants={fadeIn}>
               <button

@@ -1,3 +1,4 @@
+// src/pages/user/ContactSupport.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +8,10 @@ import Navbar from "../../components/layout/Navbar";
 import Footer from "../../components/layout/Footer";
 import { motion } from 'framer-motion';
 
+const API_BASE =
+  (process.env.REACT_APP_API_BASE || 'http://localhost/Fonezone/chat').replace(/\/+$/, '');
+const CATEGORY = 'sales support'; // keep as-is to match your backend
+
 export default function ContactSupport() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
@@ -14,6 +19,7 @@ export default function ContactSupport() {
   const [conversation, setConversation] = useState([]);
   const [isSending, setIsSending] = useState(false);
   const chatContainerRef = useRef(null);
+  const pollRef = useRef(null);
 
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
@@ -21,31 +27,57 @@ export default function ContactSupport() {
   };
   const stagger = { visible: { transition: { staggerChildren: 0.15 } } };
 
-  const loadConversation = () => {
-    const allMessages = JSON.parse(localStorage.getItem('supportMessages')) || [];
-    const thread = allMessages
-      .filter(msg => msg.from === currentUser?.email || msg.to === currentUser?.email)
-      .sort((a, b) => new Date(a.sentAt) - new Date(b.sentAt));
+  // --- Helpers ---
+  const mapApiToUi = (apiMsgs) =>
+    apiMsgs.map((m) => ({
+      id: m.id,
+      // Backend: sender_role = 'user' | 'employee'
+      // UI expects: 'user' | 'support'
+      role: m.sender_role === 'user' ? 'user' : 'support',
+      message: m.message,
+      sentAt: m.created_at ? new Date(m.created_at + 'Z').toISOString() : new Date().toISOString(),
+    }));
 
-    const updated = allMessages.map(msg =>
-      msg.to === currentUser?.email && msg.role === 'support' && !msg.read
-        ? { ...msg, read: true }
-        : msg
-    );
-    localStorage.setItem('supportMessages', JSON.stringify(updated));
-    setConversation(thread);
+  const fetchConversation = async (signal) => {
+    if (!currentUser?.email) return;
+    try {
+      const url = `${API_BASE}/get_conversation.php?user_email=${encodeURIComponent(
+        currentUser.email
+      )}&category=${encodeURIComponent(CATEGORY)}&viewer_role=user`;
+      const res = await fetch(url, { signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.status !== 'ok') throw new Error(data.error || 'Failed to load conversation');
+      setConversation(mapApiToUi(data.messages || []));
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.error(err);
+        toast.error('Failed to load conversation.');
+      }
+    }
   };
 
+  // --- Effects ---
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'user') {
       toast.info('Only registered users can contact support.');
       navigate('/home');
       return;
     }
-    loadConversation();
-    const interval = setInterval(loadConversation, 5000);
-    return () => clearInterval(interval);
-  }, [currentUser, navigate]);
+    const controller = new AbortController();
+    fetchConversation(controller.signal);
+
+    // poll every 5s
+    pollRef.current = setInterval(() => {
+      fetchConversation(new AbortController().signal);
+    }, 5000);
+
+    return () => {
+      controller.abort();
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.email]);
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -53,31 +85,40 @@ export default function ContactSupport() {
     }
   }, [conversation]);
 
-  const handleSendMessage = () => {
+  // --- Actions ---
+  const handleSendMessage = async () => {
     if (!message.trim()) {
       toast.error('Please type a message first.');
       return;
     }
+    if (!currentUser?.email) {
+      toast.error('Missing user email.');
+      return;
+    }
     setIsSending(true);
-    const newMessage = {
-      id: Date.now(),
-      from: currentUser.email,
-      to: 'support',
-      role: 'user',
-      message,
-      sentAt: new Date().toISOString(),
-      read: false,
-    };
-    const existing = JSON.parse(localStorage.getItem('supportMessages')) || [];
-    const updated = [...existing, newMessage];
-    localStorage.setItem('supportMessages', JSON.stringify(updated));
+    try {
+      const res = await fetch(`${API_BASE}/send_message.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_email: currentUser.email,
+          message: message.trim(),
+          category: CATEGORY,
+        }),
+      });
+      const data = await res.json();
+      if (data.status !== 'ok') throw new Error(data.error || 'Send failed');
 
-    setTimeout(() => {
-      setConversation([...conversation, newMessage]);
       setMessage('');
-      setIsSending(false);
+      // refresh conversation immediately after sending
+      fetchConversation(new AbortController().signal);
       toast.success('Message sent!');
-    }, 500);
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to send message.');
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -87,6 +128,7 @@ export default function ContactSupport() {
     }
   };
 
+  // --- UI (unchanged) ---
   return (
     <motion.div
       className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 text-white"
@@ -98,7 +140,7 @@ export default function ContactSupport() {
 
       {/* Full-width Container */}
       <div className="w-full px-4 sm:px-8 py-8 space-y-8">
-        {/* Hero Section (Full width) */}
+        {/* Hero Section */}
         <motion.section
           className="w-full bg-gradient-to-r from-gray-800 to-gray-900 text-center py-16 border-b border-gray-700 rounded-none"
           variants={fadeIn}
@@ -111,7 +153,7 @@ export default function ContactSupport() {
           </motion.p>
         </motion.section>
 
-        {/* Chat Box (Full width) */}
+        {/* Chat Box */}
         <motion.div
           variants={fadeIn}
           className="w-full bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700 overflow-hidden shadow-xl"
@@ -211,11 +253,8 @@ export default function ContactSupport() {
           </div>
         </motion.div>
 
-        {/* Info Section (Full width grid) */}
-        <motion.div
-          variants={stagger}
-          className="w-full grid grid-cols-1 md:grid-cols-3 gap-4"
-        >
+        {/* Info Section */}
+        <motion.div variants={stagger} className="w-full grid grid-cols-1 md:grid-cols-3 gap-4">
           <motion.div variants={fadeIn} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
             <h3 className="font-bold text-blue-400 flex items-center gap-2">
               <FaHeadset className="text-blue-400" />

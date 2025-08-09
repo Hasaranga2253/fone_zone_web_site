@@ -165,5 +165,17 @@ code {
   .nav-link.active::after {
     width: 100%;
   }
+  .form-input {
+  @apply w-full px-4 py-2 rounded bg-white/20 text-white placeholder-white/70 outline-none focus:ring-2 focus:ring-cyan-500;
+}
+
+.submit-btn {
+  @apply w-full py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded text-white font-semibold transition;
+}
+
+.eye-icon {
+  @apply absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-cyan-400;
+}
+
   
 }

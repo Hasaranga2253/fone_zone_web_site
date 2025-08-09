@@ -67,13 +67,17 @@ function FeaturedSection() {
               >
                 Shop Now
               </button>
-              <button
-                onClick={() => handleProtectedNavigation("/user/dashboard")}
-                className="bg-transparent border-2 border-white text-white font-bold py-3 px-8 rounded-full hover:bg-white hover:text-indigo-700 transition duration-300"
-              >
-                Book Repair
-              </button>
+              {/* Only show Book Repair if NOT admin */}
+              {(!currentUser || currentUser.role !== 'admin') && (
+                <button
+                  onClick={() => handleProtectedNavigation("/user/dashboard")}
+                  className="bg-transparent border-2 border-white text-white font-bold py-3 px-8 rounded-full hover:bg-white hover:text-indigo-700 transition duration-300"
+                >
+                  Book Repair
+                </button>
+              )}
             </div>
+
 
             {/* Benefits */}
             <div className="mt-8 flex flex-wrap justify-center md:justify-start gap-4">

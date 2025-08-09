@@ -26,7 +26,7 @@ const ManageProducts = () => {
     image: '',
     category: 'Phones',
     description: '',
-    rating: 4.5, // Default rating
+    rating: 4.5,
   });
   const [editingId, setEditingId] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
@@ -40,56 +40,53 @@ const ManageProducts = () => {
     'Repair Items': <FaTools className="text-amber-400" />,
   };
 
-  // Normalize product prices to numbers when loading
+  // Fetch all products from backend
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch('http://localhost/Fonezone/manageproducts.php?action=get');
+      const data = await res.json();
+      if (data.success) setProducts(data.products);
+      else setProducts([]);
+    } catch {
+      setProducts([]);
+    }
+  };
+
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem('products')) || [];
-    const normalized = stored.map((p) => {
-      let numericPrice =
-        typeof p.price === 'number'
-          ? p.price
-          : parseInt(p.price?.toString().replace(/[^0-9]/g, '')) || 0;
-      return { ...p, price: numericPrice };
-    });
-    setProducts(normalized);
-    localStorage.setItem('products', JSON.stringify(normalized)); // Save normalized
+    fetchProducts();
   }, []);
 
   const handleInputChange = (e) => {
     setNewProduct({ ...newProduct, [e.target.name]: e.target.value });
   };
 
-  const handleSaveProduct = (e) => {
+  // Add or Edit product via backend
+  const handleSaveProduct = async (e) => {
     e.preventDefault();
-    const { name, price, image, category } = newProduct;
-
+    const { name, price, image, category, description, rating } = newProduct;
     if (!name || !price || !image || !category) {
       alert('Please fill in all product fields.');
       return;
     }
 
-    // Always save price as number
-    const numericPrice = parseInt(price.toString().replace(/[^0-9]/g, '')) || 0;
-
-    let updated;
-    if (editingId) {
-      updated = products.map((p) =>
-        p.id === editingId
-          ? { ...newProduct, price: numericPrice, id: editingId }
-          : p
-      );
-    } else {
-      updated = [
-        ...products,
-        { ...newProduct, price: numericPrice, id: Date.now() },
-      ];
-    }
-
-    setProducts(updated);
-    localStorage.setItem('products', JSON.stringify(updated));
+    const body = {
+      ...newProduct,
+      price: parseInt(price.toString().replace(/[^0-9]/g, '')) || 0,
+      rating: parseFloat(rating) || 4.5,
+      id: editingId,
+    };
+    const action = editingId ? 'edit' : 'add';
+    await fetch(`http://localhost/Fonezone/manageproducts.php?action=${action}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    fetchProducts();
     resetForm();
     setIsFormExpanded(false);
   };
 
+  // Reset form and editing state
   const resetForm = () => {
     setNewProduct({
       name: '',
@@ -102,10 +99,11 @@ const ManageProducts = () => {
     setEditingId(null);
   };
 
+  // Load product to form for editing
   const handleEdit = (product) => {
     setNewProduct({
       name: product.name,
-      price: product.price.toString(), // Keep numeric as string for input
+      price: product.price.toString(),
       image: product.image,
       category: product.category,
       description: product.description || '',
@@ -115,14 +113,18 @@ const ManageProducts = () => {
     setIsFormExpanded(true);
   };
 
-  const handleDelete = (id) => {
-    const updated = products.filter((p) => p.id !== id);
-    setProducts(updated);
-    localStorage.setItem('products', JSON.stringify(updated));
+  // Delete product via backend
+  const handleDelete = async (id) => {
+    await fetch('http://localhost/Fonezone/manageproducts.php?action=delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
     setDeleteConfirmId(null);
+    fetchProducts();
   };
 
-  const formatPrice = (price) => `Rs. ${price.toLocaleString('en-US')}`;
+  const formatPrice = (price) => `Rs. ${price?.toLocaleString('en-US')}`;
   const getCategoryCount = (category) =>
     products.filter((p) => p.category === category).length;
 
@@ -146,28 +148,38 @@ const ManageProducts = () => {
         <div className="w-32" /> {/* Spacer */}
       </div>
 
-      {/* Category Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      {/* Category Stats - NOW SHOWS PHONES */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+        {/* Total Products */}
         <div className="bg-gradient-to-r from-blue-900/70 to-indigo-900/70 rounded-xl p-4 border border-indigo-700/50">
           <h3 className="text-gray-400 text-sm mb-1">Total Products</h3>
           <p className="text-3xl font-bold">{products.length}</p>
         </div>
-        {categories.slice(1).map((cat) => (
-          <div
-            key={cat}
-            className={`bg-gradient-to-r rounded-xl p-4 border ${
-              cat === 'Tablets'
-                ? 'from-purple-900/70 to-fuchsia-900/70 border-fuchsia-700/50'
-                : cat === 'Accessories'
-                ? 'from-green-900/70 to-emerald-900/70 border-emerald-700/50'
-                : 'from-amber-900/70 to-orange-900/70 border-orange-700/50'
-            }`}
-          >
-            <h3 className="text-gray-400 text-sm mb-1">{cat}</h3>
-            <p className="text-3xl font-bold">{getCategoryCount(cat)}</p>
-          </div>
-        ))}
+        {/* Phones */}
+        <div className="bg-gradient-to-r from-cyan-900/70 to-blue-900/70 rounded-xl p-4 border border-cyan-700/50">
+          <h3 className="text-gray-400 text-sm mb-1">Phones</h3>
+          <p className="text-3xl font-bold">{getCategoryCount('Phones')}</p>
+        </div>
+        {/* Tablets */}
+        <div className="bg-gradient-to-r from-purple-900/70 to-fuchsia-900/70 rounded-xl p-4 border border-fuchsia-700/50">
+          <h3 className="text-gray-400 text-sm mb-1">Tablets</h3>
+          <p className="text-3xl font-bold">{getCategoryCount('Tablets')}</p>
+        </div>
+        {/* Accessories */}
+        <div className="bg-gradient-to-r from-green-900/70 to-emerald-900/70 rounded-xl p-4 border border-emerald-700/50">
+          <h3 className="text-gray-400 text-sm mb-1">Accessories</h3>
+          <p className="text-3xl font-bold">{getCategoryCount('Accessories')}</p>
+        </div>
+        {/* Repair Items */}
+        <div className="bg-gradient-to-r from-amber-900/70 to-orange-900/70 rounded-xl p-4 border border-orange-700/50">
+          <h3 className="text-gray-400 text-sm mb-1">Repair Items</h3>
+          <p className="text-3xl font-bold">{getCategoryCount('Repair Items')}</p>
+        </div>
       </div>
+
+      {/* --- Rest of your component stays the same --- */}
+      {/* ... Product form, table, and modal code ... */}
+      {/* (No changes needed below this comment) */}
 
       {/* Add Product Toggle Button */}
       <div className="flex justify-center mb-6">

@@ -5,48 +5,59 @@ import { FaArrowLeft } from 'react-icons/fa';
 export default function ManageUsers() {
   const [employees, setEmployees] = useState([]);
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Fetch all users from backend
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('http://localhost/Fonezone/manageusers.php?action=get');
+      const data = await res.json();
+      if (data.success) {
+        const filtered = data.users.filter(u => u.email !== 'admin@fonezone.com');
+        setEmployees(filtered.filter(u => u.role === 'employee'));
+        setUsers(filtered.filter(u => u.role === 'user'));
+      }
+    } catch {
+      // Optionally handle error
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const allUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
-
-    const filtered = allUsers.filter(user => user.email !== 'admin@fonezone.com');
-
-    setEmployees(filtered.filter(u => u.role === 'employee'));
-    setUsers(filtered.filter(u => u.role === 'user'));
+    fetchUsers();
   }, []);
 
-  const handleDelete = (email, role) => {
-    const allUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
-    const updated = allUsers.filter(user => user.email !== email);
-    localStorage.setItem('registeredUsers', JSON.stringify(updated));
-
-    if (role === 'employee') {
-      setEmployees(prev => prev.filter(u => u.email !== email));
-    } else {
-      setUsers(prev => prev.filter(u => u.email !== email));
-    }
+  // Delete user/employee
+  const handleDelete = async (email) => {
+    if (!window.confirm('Are you sure?')) return;
+    await fetch('http://localhost/Fonezone/manageusers.php?action=delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    fetchUsers();
   };
 
-  const handlePromote = (email, category) => {
+  // Promote user to employee with category
+  const handlePromote = async (email, category) => {
     if (!category) return;
-
-    const allUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
-    const updatedUsers = allUsers.map(u =>
-      u.email === email ? { ...u, role: 'employee', category } : u
-    );
-
-    localStorage.setItem('registeredUsers', JSON.stringify(updatedUsers));
-
-    const filtered = updatedUsers.filter(user => user.email !== 'admin@fonezone.com');
-    setEmployees(filtered.filter(u => u.role === 'employee'));
-    setUsers(filtered.filter(u => u.role === 'user'));
+    await fetch('http://localhost/Fonezone/manageusers.php?action=promote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, category }),
+    });
+    fetchUsers();
   };
 
+  // Render Employee Table
   const renderEmployeeTable = () => (
     <div className="glass-card p-6 max-w-5xl mx-auto mb-10">
       <h3 className="text-2xl font-bold text-center mb-4">Employee Accounts</h3>
-      {employees.length === 0 ? (
+      {loading ? (
+        <p className="text-center text-gray-300">Loading...</p>
+      ) : employees.length === 0 ? (
         <p className="text-center text-gray-300">No employees found.</p>
       ) : (
         <div className="overflow-x-auto">
@@ -75,7 +86,7 @@ export default function ManageUsers() {
                   </td>
                   <td className="px-4 py-2">
                     <button
-                      onClick={() => handleDelete(emp.email, emp.role)}
+                      onClick={() => handleDelete(emp.email)}
                       className="bg-red-500 hover:bg-red-600 px-3 py-1 text-white rounded shadow"
                     >
                       Delete
@@ -90,10 +101,13 @@ export default function ManageUsers() {
     </div>
   );
 
+  // Render User Table
   const renderUserTable = () => (
     <div className="glass-card p-6 max-w-5xl mx-auto mb-10">
       <h3 className="text-2xl font-bold text-center mb-4">User Accounts</h3>
-      {users.length === 0 ? (
+      {loading ? (
+        <p className="text-center text-gray-300">Loading...</p>
+      ) : users.length === 0 ? (
         <p className="text-center text-gray-300">No users found.</p>
       ) : (
         <div className="overflow-x-auto">
@@ -132,7 +146,7 @@ export default function ManageUsers() {
                     </select>
 
                     <button
-                      onClick={() => handleDelete(user.email, user.role)}
+                      onClick={() => handleDelete(user.email)}
                       className="bg-red-500 hover:bg-red-600 px-3 py-1 text-white rounded shadow"
                     >
                       Delete
@@ -158,11 +172,9 @@ export default function ManageUsers() {
           <FaArrowLeft /> Admin Dashboard
         </button>
       </div>
-
       <h2 className="text-4xl font-bold text-center gradient-text mb-10 sm:text-5xl tracking-tight gradient-text fade-in">
         Manage Registered Users
       </h2>
-
       {renderEmployeeTable()}
       {renderUserTable()}
     </div>

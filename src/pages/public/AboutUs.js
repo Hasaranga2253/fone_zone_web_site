@@ -12,7 +12,7 @@ export default function About() {
 
   const team = [
     { id: 1, name: 'Hasaranga Shamika', role: 'CEO', bio: 'Founder with 10+ years in mobile tech.', image: '/images/fallback.jpg' },
-    { id: 2, name: 'Niven Asmitha', role: 'Operations Head', bio: 'Ensuring smooth business operations.', image: '/images/team-sarah.jpg' },
+    { id: 2, name: 'Niven Asmitha', role: 'Operations Head', bio: 'Ensuring smooth business operations.', image: '/images/niven.png' },
     { id: 3, name: 'Dilan Theekshana', role: 'Lead Technician', bio: 'Certified expert in mobile hardware repairs.', image: '/images/team-sarah.jpg' },
     { id: 4, name: 'Imesh Sandamina', role: 'Customer Success', bio: 'Making every customer experience perfect.', image: '/images/team-sarah.jpg' },
   ];

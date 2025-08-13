@@ -11,10 +11,10 @@ export default function About() {
     'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3962.2790153438855!2d79.9348343758495!3d6.735776693260405!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ae24f4be698ecd7%3A0x29ac6952b2a2f853!2s17%2C%2019%20Visal%20Uyana%2C%20Panadura!5e0!3m2!1sen!2slk!4v1753619119857!5m2!1sen!2slk';
 
   const team = [
-    { id: 1, name: 'Hasaranga Shamika', role: 'CEO', bio: 'Founder with 10+ years in mobile tech.', image: '/images/fallback.jpg' },
+    { id: 1, name: 'Hasaranga Shamika', role: 'CEO', bio: 'Founder with 10+ years in mobile tech.', image: '/images/hasa.png' },
     { id: 2, name: 'Niven Asmitha', role: 'Operations Head', bio: 'Ensuring smooth business operations.', image: '/images/niven.png' },
-    { id: 3, name: 'Dilan Theekshana', role: 'Lead Technician', bio: 'Certified expert in mobile hardware repairs.', image: '/images/team-sarah.jpg' },
-    { id: 4, name: 'Imesh Sandamina', role: 'Customer Success', bio: 'Making every customer experience perfect.', image: '/images/team-sarah.jpg' },
+    { id: 3, name: 'Dilan Theekshana', role: 'Lead Technician', bio: 'Certified expert in mobile hardware repairs.', image: '/images/dilan.png' },
+    { id: 4, name: 'Imesh Sandamina', role: 'Customer Success', bio: 'Making every customer experience perfect.', image: '/images/imesh.png' },
   ];
 
   const fadeIn = {
@@ -40,7 +40,8 @@ export default function About() {
         </p>
       </section>
 
-      <main className="max-w-6xl mx-auto px-6 py-12 space-y-24">
+      {/* WIDER PAGE CONTAINER */}
+      <main className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-24">
         {/* Our Story Section */}
         <motion.div initial="hidden" animate="visible" variants={stagger} className="grid md:grid-cols-2 gap-10 items-center">
           <motion.div variants={fadeIn}>
@@ -70,29 +71,32 @@ export default function About() {
               alt="FoneZone Shop"
               className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
               onError={(e) => {
-                e.target.src = '/images/fallback.jpg';
+                e.currentTarget.src = '/images/fallback.jpg';
               }}
             />
           </motion.div>
         </motion.div>
 
-        {/* Our Team Section */}
+        {/* Our Team Section (now benefits from the wider container) */}
         <motion.div initial="hidden" animate="visible" variants={stagger}>
           <h2 className="text-3xl font-bold mb-6 text-blue-400">Meet Our Team</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+          {/* Wider grid with comfy spacing */}
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-7">
             {team.map((member) => (
               <motion.div
                 key={member.id}
                 variants={fadeIn}
                 className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden"
               >
+                {/* 256x192 visual area (h-48 = 192px) */}
                 <div className="h-48 bg-gray-700">
                   <img
                     src={member.image}
                     alt={member.name}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      e.target.src = '/images/fallback.jpg';
+                      e.currentTarget.src = '/images/fallback.jpg';
                     }}
                   />
                 </div>
@@ -166,7 +170,7 @@ export default function About() {
               width="100%"
               height="100%"
               style={{ border: 0 }}
-              allowFullScreen=""
+              allowFullScreen
               loading="lazy"
               title="FoneZone Location"
             ></iframe>

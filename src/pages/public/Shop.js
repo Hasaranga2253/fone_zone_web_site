@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   FaCartPlus,
   FaHeart,
@@ -16,12 +16,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 function Shop() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // ---- API endpoints (CRA: set REACT_APP_API_BASE in .env.local if needed) ----
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost';
   const PRODUCTS_API = `${API_BASE}/Fonezone/manageproducts.php?action=get`;
   const CART_ADD_API = `${API_BASE}/Fonezone/managecart.php?action=add`;
-  const WISHLIST_API = `${API_BASE}/Fonezone/wishlist.php`; // wishlist.php
+  const WISHLIST_API = `${API_BASE}/Fonezone/wishlist.php`;
 
   // State
   const [products, setProducts] = useState([]);
@@ -32,8 +33,8 @@ function Shop() {
   const [priceRange, setPriceRange] = useState([0, 500000]);
   const [currentPage, setCurrentPage] = useState(1);
   const [notifyMessage, setNotifyMessage] = useState('');
-  const [busyId, setBusyId] = useState(null);         // per-item in-flight lock
-  const [wishIds, setWishIds] = useState(new Set());  // O(1) membership check
+  const [busyId, setBusyId] = useState(null);
+  const [wishIds, setWishIds] = useState(new Set());
   const productsPerPage = 12;
 
   const categories = ['All', 'Phones', 'Accessories', 'Tablets', 'Repair Items'];
@@ -58,10 +59,12 @@ function Shop() {
   const mountedRef = useRef(true);
   useEffect(() => {
     mountedRef.current = true;
-    return () => { mountedRef.current = false; };
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
-  // ---------- Data loaders (memoized to satisfy exhaustive-deps) ----------
+  // ---------- Data loaders ----------
   const loadProducts = useCallback(() => {
     const controller = new AbortController();
     (async () => {
@@ -93,7 +96,7 @@ function Shop() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (!mountedRef.current) return;
-        const ids = new Set((data.items || []).map(i => i.id));
+        const ids = new Set((data.items || []).map((i) => i.id));
         setWishIds(ids);
       } catch (err) {
         if (err?.name !== 'AbortError') setWishIds(new Set());
@@ -106,7 +109,7 @@ function Shop() {
   useEffect(loadProducts, [loadProducts]);
   useEffect(loadWishlist, [loadWishlist]);
 
-  // Filtering + pagination
+  // ---------- Filtering + pagination ----------
   const filteredProducts = products.filter(
     (p) =>
       (activeCategory === 'All' || p.category === activeCategory) &&
@@ -119,9 +122,44 @@ function Shop() {
     currentPage * productsPerPage
   );
 
+  // Reset page to 1 on filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeCategory, priceRange]);
+  }, [activeCategory, priceRange, productsPerPage]);
+
+  // ---------- Deep-link: /shop#<productId> ----------
+  useEffect(() => {
+    const raw = (location.hash || '').slice(1);
+    const targetId = Number.parseInt(raw, 10);
+    if (!Number.isFinite(targetId)) return;
+    if (!products || products.length === 0) return;
+
+    const idx = products.findIndex((p) => Number(p.id) === targetId);
+    if (idx === -1) return;
+
+    // Ensure filters won't hide the target
+    if (activeCategory !== 'All') setActiveCategory('All');
+    const fullRange = [0, Number.MAX_SAFE_INTEGER];
+    if (priceRange[0] !== fullRange[0] || priceRange[1] !== fullRange[1]) {
+      setPriceRange(fullRange);
+    }
+
+    // Go to the page that contains the target product
+    const page = Math.max(1, Math.floor(idx / productsPerPage) + 1);
+    const scrollToCard = () => {
+      const el = document.getElementById(`product-${targetId}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    if (currentPage !== page) {
+      setCurrentPage(page);
+      // Wait for page render, then scroll
+      requestAnimationFrame(() => requestAnimationFrame(scrollToCard));
+    } else {
+      // Already on correct page
+      requestAnimationFrame(scrollToCard);
+    }
+  }, [location.hash, products, productsPerPage, activeCategory, priceRange, currentPage]);
 
   // ---------- Actions ----------
   const handleAddToCart = async (product) => {
@@ -275,6 +313,7 @@ function Shop() {
               <button
                 onClick={() => setQuickView(null)}
                 className="absolute top-4 right-4 z-10 bg-gray-700 hover:bg-gray-600 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                aria-label="Close quick view"
               >
                 <FaTimes className="text-gray-300" />
               </button>
@@ -285,7 +324,10 @@ function Shop() {
                     src={quickView.image || fallbackImage}
                     alt={quickView.name}
                     className="h-56 object-contain transition-transform duration-500 hover:scale-105"
-                    onError={(e) => (e.currentTarget.src = fallbackImage)}
+                    onError={(e) => {
+                      // eslint-disable-next-line no-param-reassign
+                      e.currentTarget.src = fallbackImage;
+                    }}
                   />
                   <div className="absolute top-4 left-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-3 py-1 rounded-full text-xs font-bold">
                     {quickView.category || 'Product'}
@@ -299,18 +341,12 @@ function Shop() {
                       <FaStar
                         key={star}
                         onClick={() => handleRateProduct(quickView.id, star)}
-                        className={`cursor-pointer ${
-                          star <= (quickView.rating || 0) ? 'text-yellow-400' : 'text-gray-600'
-                        }`}
+                        className={`cursor-pointer ${star <= (quickView.rating || 0) ? 'text-yellow-400' : 'text-gray-600'}`}
                       />
                     ))}
-                    <span className="text-gray-400 text-sm">
-                      Average: {quickView.rating || 'N/A'}
-                    </span>
+                    <span className="text-gray-400 text-sm">Average: {quickView.rating || 'N/A'}</span>
                   </div>
-                  <p className="text-cyan-400 text-2xl font-bold mb-4">
-                    {formatPrice(quickView.price)}
-                  </p>
+                  <p className="text-cyan-400 text-2xl font-bold mb-4">{formatPrice(quickView.price)}</p>
                   <div className="mb-6">
                     <h3 className="text-gray-300 font-medium mb-2">Description</h3>
                     <p className="text-gray-400">{quickView.description || 'No description available.'}</p>
@@ -335,8 +371,9 @@ function Shop() {
                         setQuickView(null);
                       }}
                       disabled={busyId === quickView?.id}
-                      className={`flex-1 py-3 rounded-lg flex items-center justify-center gap-2 disabled:opacity-60
-                        ${inWishlist(quickView?.id) ? 'bg-pink-600' : 'bg-gradient-to-r from-pink-600 to-rose-700'}`}
+                      className={`flex-1 py-3 rounded-lg flex items-center justify-center gap-2 disabled:opacity-60 ${
+                        inWishlist(quickView?.id) ? 'bg-pink-600' : 'bg-gradient-to-r from-pink-600 to-rose-700'
+                      }`}
                     >
                       {inWishlist(quickView?.id) ? <FaHeart /> : <FaRegHeart />}
                       {inWishlist(quickView?.id) ? 'In Wishlist' : 'Add to Wishlist'}
@@ -379,7 +416,7 @@ function Shop() {
 
             <button
               onClick={() => (currentUser ? navigate('/wishlist') : showNotification('Log in to view wishlist'))}
-              className="flex items-center justify-center gap-2 w-full px-4 py-2 mb-6 bg-gradient-to-r from-pink-600 to-rose-700 rounded-lg shadow-md"
+              className="flex items-center gap-2 w-full px-4 py-2 mb-4 bg-gradient-to-r  from-pink-600 to-rose-700 rounded-lg"
             >
               <FaHeart /> <span className="hidden md:inline">Wishlist</span>
             </button>
@@ -408,7 +445,7 @@ function Shop() {
                 <input
                   type="range"
                   min="0"
-                  max="500000"
+                  max="1500000"
                   step="10000"
                   value={priceRange[1]}
                   onChange={(e) => setPriceRange([0, parseInt(e.target.value, 10)])}
@@ -424,7 +461,10 @@ function Shop() {
 
         {/* Products Grid */}
         <motion.div className="flex-1" variants={stagger}>
-          <motion.div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 w-full" variants={stagger}>
+          <motion.div
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 w-full"
+            variants={stagger}
+          >
             {displayedProducts.length === 0 ? (
               <div className="col-span-full text-center py-16 text-gray-400">No products found.</div>
             ) : (
@@ -434,6 +474,7 @@ function Shop() {
                 return (
                   <motion.div
                     key={product.id}
+                    id={`product-${product.id}`} // <-- scroll target for deep-link
                     variants={fadeIn}
                     className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-lg group hover:shadow-xl transition"
                   >
@@ -442,14 +483,19 @@ function Shop() {
                         src={product.image || fallbackImage}
                         alt={product.name}
                         className="h-44 object-contain transition-transform group-hover:scale-110"
-                        onError={(e) => (e.currentTarget.src = fallbackImage)}
+                        onError={(e) => {
+                          // eslint-disable-next-line no-param-reassign
+                          e.currentTarget.src = fallbackImage;
+                        }}
                       />
                       <div className="absolute top-4 right-4 flex flex-col gap-2">
                         <button
                           onClick={(e) => handleToggleWishlist(product, e)}
                           disabled={isBusy}
-                          className={`w-10 h-10 rounded-full flex items-center justify-center disabled:opacity-60
-                            ${inWishlist(product.id) ? 'bg-pink-600' : 'bg-gray-800/70 hover:bg-pink-600'}`}
+                          className={`w-10 h-10 rounded-full flex items-center justify-center disabled:opacity-60 ${
+                            inWishlist(product.id) ? 'bg-pink-600' : 'bg-gray-800/70 hover:bg-pink-600'
+                          }`}
+                          aria-label="Toggle wishlist"
                         >
                           {inWishlist(product.id) ? (
                             <FaHeart className="text-white" />
@@ -460,6 +506,7 @@ function Shop() {
                         <button
                           onClick={() => setQuickView(product)}
                           className="bg-gray-800/70 hover:bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center"
+                          aria-label="Quick view"
                         >
                           <FaSearch className="text-blue-400" />
                         </button>

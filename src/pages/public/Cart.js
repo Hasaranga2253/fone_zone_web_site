@@ -1,3 +1,4 @@
+// src/pages/public/Cart.js
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -10,7 +11,7 @@ function Cart() {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState([]);
 
-  // 🟦 Load cart from PHP backend
+  // Load cart from PHP backend
   const loadCart = () => {
     if (!currentUser) {
       setCartItems([]);
@@ -23,13 +24,11 @@ function Cart() {
 
   useEffect(() => {
     loadCart();
-    // Optionally reload on focus (refresh tab = get latest cart)
     window.addEventListener('focus', loadCart);
     return () => window.removeEventListener('focus', loadCart);
     // eslint-disable-next-line
   }, [currentUser]);
 
-  // 🟦 Remove item from cart (backend)
   const handleRemove = (product_id) => {
     fetch('http://localhost/Fonezone/managecart.php?action=remove', {
       method: 'POST',
@@ -43,7 +42,6 @@ function Cart() {
       });
   };
 
-  // 🟦 Change quantity in cart (backend)
   const handleQuantityChange = (product_id, delta) => {
     const current = cartItems.find((item) => item.product_id === product_id);
     const newQty = Math.max(1, (current?.quantity || 1) + delta);
@@ -56,7 +54,6 @@ function Cart() {
       .then(() => loadCart());
   };
 
-  // 🟦 Clear entire cart (backend)
   const handleClearCart = () => {
     fetch('http://localhost/Fonezone/managecart.php?action=clear', {
       method: 'POST',
@@ -70,9 +67,8 @@ function Cart() {
       });
   };
 
-  // Calculations
   const subtotal = cartItems.reduce((sum, item) => {
-    let price =
+    const price =
       typeof item.price === 'number'
         ? item.price
         : parseFloat(item.price && item.price.toString().replace(/[^\d.-]/g, '')) || 0;
@@ -81,14 +77,12 @@ function Cart() {
   const tax = Math.round(subtotal * 0.10);
   const total = subtotal + tax;
 
-  // Animation variants
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
   };
   const stagger = { visible: { transition: { staggerChildren: 0.15 } } };
 
-  // Show login warning if not logged in
   if (!currentUser) {
     return (
       <motion.div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-b from-gray-900 to-gray-950 text-white">
@@ -130,15 +124,15 @@ function Cart() {
         </motion.p>
       </motion.section>
 
-      {/* Main Cart Section */}
+      {/* Main Cart Section (WIDER CONTAINER) */}
       <motion.div
-        className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-8"
+        className="flex-1 max-w-screen-2xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8"
         variants={stagger}
       >
         {cartItems.length === 0 ? (
           <motion.div
             variants={fadeIn}
-            className="flex flex-col items-center justify-center py-16 bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl"
+            className="w-full flex flex-col items-center justify-center py-16 bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl"
           >
             <div className="bg-gray-700 p-6 rounded-full w-24 h-24 flex items-center justify-center mb-6">
               <FaShoppingCart className="text-4xl text-blue-400" />
@@ -172,7 +166,7 @@ function Cart() {
                       src={item.image || '/images/fallback.jpg'}
                       alt={item.product_name || item.name}
                       className="max-h-24 max-w-24 object-contain"
-                      onError={e => { e.target.src = '/images/fallback.jpg'; }}
+                      onError={(e) => { e.currentTarget.src = '/images/fallback.jpg'; }}
                     />
                   </div>
                   <div className="flex-1 md:ml-6 mt-4 md:mt-0 text-center md:text-left">

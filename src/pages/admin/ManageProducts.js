@@ -16,6 +16,8 @@ import {
 } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost/Fonezone';
+
 const ManageProducts = () => {
   const navigate = useNavigate();
 
@@ -31,6 +33,7 @@ const ManageProducts = () => {
   const [editingId, setEditingId] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [isFormExpanded, setIsFormExpanded] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const categories = ['Phones', 'Tablets', 'Accessories', 'Repair Items'];
   const categoryIcons = {
@@ -40,53 +43,103 @@ const ManageProducts = () => {
     'Repair Items': <FaTools className="text-amber-400" />,
   };
 
-  // Fetch all products from backend
+  // Always include cookies; parse JSON safely; bubble up 401/403
+  const apiFetch = async (url, options = {}) => {
+    const res = await fetch(url, { credentials: 'include', ...options });
+    let data = null;
+    try {
+      data = await res.json();
+    } catch {
+      /* ignore non-JSON */
+    }
+    if (res.status === 401 || res.status === 403) {
+      const err = new Error('unauthorized');
+      err.code = res.status;
+      err.data = data;
+      throw err;
+    }
+    return { res, data };
+  };
+
+  // --------- Load products (admin-only) ----------
   const fetchProducts = async () => {
     try {
-      const res = await fetch('http://localhost/Fonezone/manageproducts.php?action=get');
-      const data = await res.json();
-      if (data.success) setProducts(data.products);
-      else setProducts([]);
-    } catch {
-      setProducts([]);
+      const { data } = await apiFetch(`${API_BASE}/manageproducts.php?action=get`);
+      const list =
+        data?.data?.products ||
+        data?.products ||
+        (Array.isArray(data) ? data : []);
+      setProducts(Array.isArray(list) ? list : []);
+    } catch (err) {
+      if (err?.code === 401 || err?.code === 403) {
+        navigate('/unauthorized', { replace: true });
+      } else {
+        setProducts([]);
+      }
     }
   };
 
   useEffect(() => {
     fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleInputChange = (e) => {
-    setNewProduct({ ...newProduct, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setNewProduct((p) => ({ ...p, [name]: value }));
   };
 
-  // Add or Edit product via backend
+  // Small validator/sanitizer
+  const buildBody = () => {
+    const priceInt = parseInt(String(newProduct.price).replace(/[^0-9]/g, ''), 10);
+    const ratingNum = Math.max(1, Math.min(5, parseFloat(newProduct.rating) || 4.5));
+    const body = {
+      name: (newProduct.name || '').trim(),
+      price: Number.isFinite(priceInt) ? priceInt : 0,
+      image: (newProduct.image || '').trim(),
+      category: newProduct.category,
+      description: (newProduct.description || '').trim(),
+      rating: ratingNum,
+      id: editingId,
+    };
+    return body;
+  };
+
+  // --------- Add / Edit ----------
   const handleSaveProduct = async (e) => {
     e.preventDefault();
-    const { name, price, image, category, description, rating } = newProduct;
-    if (!name || !price || !image || !category) {
-      alert('Please fill in all product fields.');
+    if (loading) return;
+
+    const body = buildBody();
+    if (!body.name || !body.price || !body.image || !body.category) {
+      alert('Please fill in all required product fields.');
       return;
     }
 
-    const body = {
-      ...newProduct,
-      price: parseInt(price.toString().replace(/[^0-9]/g, '')) || 0,
-      rating: parseFloat(rating) || 4.5,
-      id: editingId,
-    };
     const action = editingId ? 'edit' : 'add';
-    await fetch(`http://localhost/Fonezone/manageproducts.php?action=${action}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    fetchProducts();
-    resetForm();
-    setIsFormExpanded(false);
+
+    try {
+      setLoading(true);
+      await apiFetch(`${API_BASE}/manageproducts.php?action=${action}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      await fetchProducts();
+      resetForm();
+      setIsFormExpanded(false);
+    } catch (err) {
+      if (err?.code === 401 || err?.code === 403) {
+        navigate('/unauthorized', { replace: true });
+      } else {
+        alert('Failed to save product. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Reset form and editing state
+  // --------- Reset form ----------
   const resetForm = () => {
     setNewProduct({
       name: '',
@@ -99,11 +152,11 @@ const ManageProducts = () => {
     setEditingId(null);
   };
 
-  // Load product to form for editing
+  // --------- Edit prefill ----------
   const handleEdit = (product) => {
     setNewProduct({
       name: product.name,
-      price: product.price.toString(),
+      price: String(product.price ?? ''),
       image: product.image,
       category: product.category,
       description: product.description || '',
@@ -113,18 +166,30 @@ const ManageProducts = () => {
     setIsFormExpanded(true);
   };
 
-  // Delete product via backend
+  // --------- Delete ----------
   const handleDelete = async (id) => {
-    await fetch('http://localhost/Fonezone/manageproducts.php?action=delete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    });
-    setDeleteConfirmId(null);
-    fetchProducts();
+    if (loading) return;
+    try {
+      setLoading(true);
+      await apiFetch(`${API_BASE}/manageproducts.php?action=delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      setDeleteConfirmId(null);
+      await fetchProducts();
+    } catch (err) {
+      if (err?.code === 401 || err?.code === 403) {
+        navigate('/unauthorized', { replace: true });
+      } else {
+        alert('Failed to delete product. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const formatPrice = (price) => `Rs. ${price?.toLocaleString('en-US')}`;
+  const formatPrice = (price) => `Rs. ${Number(price || 0).toLocaleString('en-US')}`;
   const getCategoryCount = (category) =>
     products.filter((p) => p.category === category).length;
 
@@ -148,38 +213,29 @@ const ManageProducts = () => {
         <div className="w-32" /> {/* Spacer */}
       </div>
 
-      {/* Category Stats - NOW SHOWS PHONES */}
+      {/* Category Stats */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-        {/* Total Products */}
         <div className="bg-gradient-to-r from-blue-900/70 to-indigo-900/70 rounded-xl p-4 border border-indigo-700/50">
           <h3 className="text-gray-400 text-sm mb-1">Total Products</h3>
           <p className="text-3xl font-bold">{products.length}</p>
         </div>
-        {/* Phones */}
         <div className="bg-gradient-to-r from-cyan-900/70 to-blue-900/70 rounded-xl p-4 border border-cyan-700/50">
           <h3 className="text-gray-400 text-sm mb-1">Phones</h3>
           <p className="text-3xl font-bold">{getCategoryCount('Phones')}</p>
         </div>
-        {/* Tablets */}
         <div className="bg-gradient-to-r from-purple-900/70 to-fuchsia-900/70 rounded-xl p-4 border border-fuchsia-700/50">
           <h3 className="text-gray-400 text-sm mb-1">Tablets</h3>
           <p className="text-3xl font-bold">{getCategoryCount('Tablets')}</p>
         </div>
-        {/* Accessories */}
         <div className="bg-gradient-to-r from-green-900/70 to-emerald-900/70 rounded-xl p-4 border border-emerald-700/50">
           <h3 className="text-gray-400 text-sm mb-1">Accessories</h3>
           <p className="text-3xl font-bold">{getCategoryCount('Accessories')}</p>
         </div>
-        {/* Repair Items */}
         <div className="bg-gradient-to-r from-amber-900/70 to-orange-900/70 rounded-xl p-4 border border-orange-700/50">
           <h3 className="text-gray-400 text-sm mb-1">Repair Items</h3>
           <p className="text-3xl font-bold">{getCategoryCount('Repair Items')}</p>
         </div>
       </div>
-
-      {/* --- Rest of your component stays the same --- */}
-      {/* ... Product form, table, and modal code ... */}
-      {/* (No changes needed below this comment) */}
 
       {/* Add Product Toggle Button */}
       <div className="flex justify-center mb-6">
@@ -188,9 +244,10 @@ const ManageProducts = () => {
           whileTap={{ scale: 0.95 }}
           onClick={() => {
             resetForm();
-            setIsFormExpanded(!isFormExpanded);
+            setIsFormExpanded((v) => !v);
           }}
           className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full shadow-lg"
+          disabled={loading}
         >
           {isFormExpanded ? <FaTimes /> : <FaPlus />}
           {isFormExpanded ? 'Close Form' : 'Add New Product'}
@@ -230,6 +287,7 @@ const ManageProducts = () => {
                     value={newProduct.name}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 rounded-lg bg-gray-700/50 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-cyan-500"
+                    disabled={loading}
                   />
                 </div>
 
@@ -243,6 +301,7 @@ const ManageProducts = () => {
                     value={newProduct.price}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 rounded-lg bg-gray-700/50 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-cyan-500"
+                    disabled={loading}
                   />
                 </div>
 
@@ -256,6 +315,7 @@ const ManageProducts = () => {
                     value={newProduct.image}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 rounded-lg bg-gray-700/50 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-cyan-500"
+                    disabled={loading}
                   />
                 </div>
 
@@ -267,6 +327,7 @@ const ManageProducts = () => {
                     value={newProduct.category}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 rounded-lg bg-gray-700/50 border border-gray-600 text-white focus:ring-2 focus:ring-cyan-500"
+                    disabled={loading}
                   >
                     {categories.map((cat) => (
                       <option key={cat} value={cat}>
@@ -284,6 +345,7 @@ const ManageProducts = () => {
                     value={newProduct.rating}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 rounded-lg bg-gray-700/50 border border-gray-600 text-white focus:ring-2 focus:ring-cyan-500"
+                    disabled={loading}
                   >
                     {[1, 2, 3, 4, 5].map((rating) => (
                       <option key={rating} value={rating}>
@@ -319,6 +381,7 @@ const ManageProducts = () => {
                     onChange={handleInputChange}
                     rows="3"
                     className="w-full px-4 py-3 rounded-lg bg-gray-700/50 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-cyan-500"
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -331,12 +394,14 @@ const ManageProducts = () => {
                     setIsFormExpanded(false);
                   }}
                   className="px-6 py-3 bg-gradient-to-r from-gray-700 to-gray-800 rounded-lg hover:opacity-90 transition"
+                  disabled={loading}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg hover:opacity-90 transition flex items-center gap-2"
+                  className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg hover:opacity-90 transition flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled={loading}
                 >
                   <FaSave /> {editingId ? 'Update Product' : 'Save Product'}
                 </button>
@@ -355,6 +420,7 @@ const ManageProducts = () => {
           <button
             onClick={() => setIsFormExpanded(true)}
             className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg hover:opacity-90 transition"
+            disabled={loading}
           >
             Create Product
           </button>
@@ -417,6 +483,7 @@ const ManageProducts = () => {
                           whileTap={{ scale: 0.9 }}
                           onClick={() => handleEdit(product)}
                           className="p-2 bg-blue-600/30 hover:bg-blue-600/50 rounded-full"
+                          disabled={loading}
                         >
                           <FaEdit className="text-blue-300" />
                         </motion.button>
@@ -425,6 +492,7 @@ const ManageProducts = () => {
                           whileTap={{ scale: 0.9 }}
                           onClick={() => setDeleteConfirmId(product.id)}
                           className="p-2 bg-red-600/30 hover:bg-red-600/50 rounded-full"
+                          disabled={loading}
                         >
                           <FaTrash className="text-red-300" />
                         </motion.button>
@@ -464,12 +532,14 @@ const ManageProducts = () => {
                 <button
                   onClick={() => setDeleteConfirmId(null)}
                   className="px-5 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition"
+                  disabled={loading}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => handleDelete(deleteConfirmId)}
-                  className="px-5 py-2 bg-gradient-to-r from-red-500 to-orange-500 rounded-lg hover:opacity-90 transition flex items-center gap-2"
+                  className="px-5 py-2 bg-gradient-to-r from-red-500 to-orange-500 rounded-lg hover:opacity-90 transition flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled={loading}
                 >
                   <FaTrash /> Delete
                 </button>

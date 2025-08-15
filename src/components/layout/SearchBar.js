@@ -16,23 +16,21 @@ function SearchBar() {
   const wrapperRef = useRef(null);
   const abortRef = useRef(null);
 
-  // API endpoint (consistent with Shop.js)
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost';
   const SEARCH_API = `${API_BASE}/Fonezone/search_products.php`;
 
-  // Debounce query
   const [debouncedQuery, setDebouncedQuery] = useState('');
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), 250);
     return () => clearTimeout(timer);
   }, [query]);
 
-  // Fetch search results
   const loadResults = useCallback(() => {
     if (!currentUser || !debouncedQuery) {
       setResults([]);
       setOpen(false);
       setErr(null);
+      if (abortRef.current) abortRef.current.abort();
       return;
     }
 
@@ -52,7 +50,7 @@ function SearchBar() {
         const res = await fetch(url.toString(), {
           method: 'GET',
           headers: { Accept: 'application/json' },
-          credentials: 'include', // maintain PHP session
+          credentials: 'include',
           signal: controller.signal,
         });
 
@@ -79,21 +77,24 @@ function SearchBar() {
 
   useEffect(loadResults, [loadResults]);
 
-  // Close listbox
   const closeList = () => {
     setOpen(false);
     setHighlightedIndex(-1);
   };
 
-  // Handle search selection
+  const goToShopWithName = (name) => {
+    const q = encodeURIComponent(name || '');
+    navigate(`/shop?q=${q}`);
+  };
+
   const handleSearch = () => {
     if (!results.length) return;
     const target = results[highlightedIndex] || results[0];
-    navigate(`/shop#${target.id}`);
+    setQuery(target.name);
+    goToShopWithName(target.name);
     closeList();
   };
 
-  // Keyboard navigation
   const handleKeyDown = (e) => {
     if (!open && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
       setOpen(true);
@@ -113,15 +114,13 @@ function SearchBar() {
     }
   };
 
-  // Mouse click result
   const handleClickResult = (item, index) => {
     setHighlightedIndex(index);
-    setQuery(item.name);  
-    navigate(`/shop#${item.id}`);
+    setQuery(item.name);
+    goToShopWithName(item.name);
     closeList();
   };
 
-  // Close on outside click
   useEffect(() => {
     const onDocClick = (e) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
@@ -132,7 +131,6 @@ function SearchBar() {
     return () => document.removeEventListener('mousedown', onDocClick);
   }, []);
 
-  // Hide bar for guests
   if (!currentUser) return null;
 
   const listboxId = 'search-results';
@@ -182,24 +180,22 @@ function SearchBar() {
           {loading && <div className="px-4 py-2 text-gray-500 text-sm">Searching…</div>}
           {err && !loading && <div className="px-4 py-2 text-red-600 text-sm">{err}</div>}
 
-          {!loading &&
-            !err &&
-            results.map((item, index) => (
-              <div
-                id={`search-opt-${index}`}
-                key={item.id}
-                role="option"
-                aria-selected={index === highlightedIndex}
-                className={`px-4 py-2 cursor-pointer ${
-                  index === highlightedIndex ? 'bg-cyan-100 font-semibold' : 'hover:bg-gray-100'
-                }`}
-                onMouseEnter={() => setHighlightedIndex(index)}
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => handleClickResult(item, index)}
-              >
-                {item.name}
-              </div>
-            ))}
+          {!loading && !err && results.map((item, index) => (
+            <div
+              id={`search-opt-${index}`}
+              key={item.id}
+              role="option"
+              aria-selected={index === highlightedIndex}
+              className={`px-4 py-2 cursor-pointer ${
+                index === highlightedIndex ? 'bg-cyan-100 font-semibold' : 'hover:bg-gray-100'
+              }`}
+              onMouseEnter={() => setHighlightedIndex(index)}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => handleClickResult(item, index)}
+            >
+              {item.name}
+            </div>
+          ))}
 
           {!loading && !err && results.length === 0 && (
             <div className="px-4 py-2 text-gray-500 text-sm">No matches</div>

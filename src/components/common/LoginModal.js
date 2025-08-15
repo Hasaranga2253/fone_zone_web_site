@@ -1,8 +1,12 @@
+// src/pages/admin/LoginModal.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+
+// Prefer env var but default to your exact backend path (capital F!)
+const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost/Fonezone';
 
 function LoginModal({ onClose, redirectTo = '/', switchToRegister }) {
   const [email, setEmail] = useState('');
@@ -13,61 +17,76 @@ function LoginModal({ onClose, redirectTo = '/', switchToRegister }) {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  // LOGIN HANDLER (Hardcoded admin + backend for others)
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    if (loading) return;
 
-    // ---- HARD CODED ADMIN LOGIN ----
-    if (email === "admin@fonezone.com" && password === "admin123") {
-      const adminUser = {
-        id: 1,
-        full_name: "Admin",
-        username: "admin",
-        email: "admin@fonezone.com",
-        role: "admin",
-        category: null,
-        dob: "1990-01-01",
-        gender: "male",
-      };
-      login(adminUser);
-      toast.success('✅ Admin login successful!');
-      onClose();
-      navigate('/admin/dashboard');
-      setLoading(false);
+    // Basic client-side validation
+    const trimmedEmail = email.trim().toLowerCase();
+    const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail);
+    if (!validEmail) {
+      toast.error('Please enter a valid email.');
+      return;
+    }
+    if (password.length < 8) {
+      toast.error('Password must be at least 8 characters.');
       return;
     }
 
-    // ---- Regular user login via PHP backend ----
+    setLoading(true);
     try {
-      const res = await fetch('http://localhost/fonezone/login.php', {
+      const res = await fetch(`${API_BASE}/login.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        credentials: 'include', // critical: send/receive PHP session cookie
+        body: JSON.stringify({ email: trimmedEmail, password }),
       });
-      const data = await res.json();
 
-      if (data.success) {
-        login(data.user); // Set user in React Context ONLY!
-        toast.success('✅ Login successful!');
-        onClose();
-        // Redirect based on role
-        if (data.user.role === 'admin') navigate('/admin/dashboard');
-        else if (data.user.role === 'employee') {
-          const cat = (data.user.category || '').toLowerCase();
-          if (cat === 'repair technician') navigate('/employee/repairs');
-          else if (cat === 'delivery driver') navigate('/employee/delivery');
-          else if (cat === 'sales support') navigate('/employee/support');
-          else navigate('/employee/dashboard');
-        }
-        else navigate(redirectTo || '/user/dashboard');
-      } else {
-        toast.error(data.error || '❌ Incorrect email or password.');
+      // Try to parse JSON; tolerate non-JSON responses safely
+      let payload = null;
+      try {
+        payload = await res.json();
+      } catch {
+        /* ignore */
       }
-    } catch (err) {
-      toast.error('❌ Login failed. Server error.');
+
+      // Expected success shape: { status: 'ok', data: { user: {...} } }
+      if (res.ok && payload?.status === 'ok' && payload?.data?.user) {
+        const user = payload.data.user;
+        login(user); // store in React Context only (server keeps session via cookie)
+        toast.success('✅ Login successful!');
+        onClose?.();
+
+        // Role-based redirects
+        if (user.role === 'admin') {
+          navigate('/admin/dashboard', { replace: true });
+        } else if (user.role === 'employee') {
+          const cat = (user.category || '').toLowerCase();
+          if (cat === 'repair technician') navigate('/employee/repairs', { replace: true });
+          else if (cat === 'delivery driver') navigate('/employee/delivery', { replace: true });
+          else if (cat === 'sales support') navigate('/employee/support', { replace: true });
+          else navigate('/employee/dashboard', { replace: true });
+        } else {
+          navigate(redirectTo || '/user/dashboard', { replace: true });
+        }
+        return;
+      }
+
+      // Handle known auth errors
+      if (res.status === 401 || res.status === 403) {
+        toast.error('Unauthorized. Please check your email and password.');
+        return;
+      }
+
+      const errMsg =
+        (payload && (payload.error || payload.message)) ||
+        `❌ Login failed${res.status ? ` (${res.status})` : ''}.`;
+      toast.error(errMsg);
+    } catch {
+      toast.error('❌ Login failed. Please check your connection.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -78,12 +97,14 @@ function LoginModal({ onClose, redirectTo = '/', switchToRegister }) {
           onClick={onClose}
           className="absolute top-2 right-3 text-white/80 hover:text-red-400 text-xl font-bold"
           aria-label="Close Login"
+          disabled={loading}
         >
           &times;
         </button>
 
         <h2 className="text-3xl font-bold mb-6 text-center">Login</h2>
-        <form onSubmit={handleLogin} className="space-y-4">
+
+        <form onSubmit={handleLogin} className="space-y-4" noValidate>
           <input
             type="email"
             name="email"
@@ -96,6 +117,7 @@ function LoginModal({ onClose, redirectTo = '/', switchToRegister }) {
             required
             disabled={loading}
           />
+
           <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}
@@ -108,21 +130,24 @@ function LoginModal({ onClose, redirectTo = '/', switchToRegister }) {
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={loading}
+              minLength={8}
             />
             <button
               type="button"
-              onClick={() => setShowPassword(!showPassword)}
+              onClick={() => setShowPassword((s) => !s)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-cyan-400"
-              aria-label="Show/hide password"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
               tabIndex={-1}
+              disabled={loading}
             >
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </button>
           </div>
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 rounded text-white font-semibold transition"
+            className="w-full py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 rounded text-white font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {loading ? 'Logging in...' : 'Login'}
           </button>
@@ -133,7 +158,8 @@ function LoginModal({ onClose, redirectTo = '/', switchToRegister }) {
           <span
             className="text-cyan-400 underline cursor-pointer"
             onClick={() => {
-              onClose();
+              if (loading) return;
+              onClose?.();
               switchToRegister && switchToRegister();
             }}
           >

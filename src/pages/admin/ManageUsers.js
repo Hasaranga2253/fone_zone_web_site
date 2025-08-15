@@ -1,6 +1,9 @@
+// src/pages/admin/ManageUsers.js
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
+
+const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost/Fonezone';
 
 export default function ManageUsers() {
   const [employees, setEmployees] = useState([]);
@@ -8,50 +11,94 @@ export default function ManageUsers() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Fetch all users from backend
+  // Always send cookies; safely parse JSON; redirect on 401/403
+  const apiFetch = async (url, options = {}) => {
+    const res = await fetch(url, { credentials: 'include', ...options });
+    let data = null;
+    try {
+      data = await res.json();
+    } catch {
+      /* non-JSON / empty */
+    }
+    if (res.status === 401 || res.status === 403) {
+      const err = new Error('unauthorized');
+      err.code = res.status;
+      err.data = data;
+      throw err;
+    }
+    return { res, data };
+  };
+
+  // Normalize backend responses
+  const extractUsers = (data) => {
+    if (data?.data?.users && Array.isArray(data.data.users)) return data.data.users; // { status:'ok', data:{users:[]}}
+    if (data?.success && Array.isArray(data.users)) return data.users;               // { success:true, users:[] }
+    if (Array.isArray(data)) return data;                                            // raw array
+    return [];
+  };
+
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost/Fonezone/manageusers.php?action=get');
-      const data = await res.json();
-      if (data.success) {
-        const filtered = data.users.filter(u => u.email !== 'admin@fonezone.com');
-        setEmployees(filtered.filter(u => u.role === 'employee'));
-        setUsers(filtered.filter(u => u.role === 'user'));
+      const { data } = await apiFetch(`${API_BASE}/manageusers.php?action=get`);
+      const list = extractUsers(data).filter(
+        (u) => (u?.email || '').toLowerCase() !== 'admin@fonezone.com'
+      );
+      setEmployees(list.filter((u) => (u.role || '').toLowerCase() === 'employee'));
+      setUsers(list.filter((u) => (u.role || '').toLowerCase() === 'user'));
+    } catch (err) {
+      if (err?.code === 401 || err?.code === 403) {
+        navigate('/unauthorized', { replace: true });
+      } else {
+        setEmployees([]);
+        setUsers([]);
       }
-    } catch {
-      // Optionally handle error
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
     fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Delete user/employee
   const handleDelete = async (email) => {
     if (!window.confirm('Are you sure?')) return;
-    await fetch('http://localhost/Fonezone/manageusers.php?action=delete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
-    fetchUsers();
+    try {
+      await apiFetch(`${API_BASE}/manageusers.php?action=delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      fetchUsers();
+    } catch (err) {
+      if (err?.code === 401 || err?.code === 403) {
+        navigate('/unauthorized', { replace: true });
+      } else {
+        alert('Failed to delete user. Please try again.');
+      }
+    }
   };
 
-  // Promote user to employee with category
   const handlePromote = async (email, category) => {
     if (!category) return;
-    await fetch('http://localhost/Fonezone/manageusers.php?action=promote', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, category }),
-    });
-    fetchUsers();
+    try {
+      await apiFetch(`${API_BASE}/manageusers.php?action=promote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, category }),
+      });
+      fetchUsers();
+    } catch (err) {
+      if (err?.code === 401 || err?.code === 403) {
+        navigate('/unauthorized', { replace: true });
+      } else {
+        alert('Failed to promote user. Please try again.');
+      }
+    }
   };
 
-  // Render Employee Table
   const renderEmployeeTable = () => (
     <div className="glass-card p-6 max-w-5xl mx-auto mb-10">
       <h3 className="text-2xl font-bold text-center mb-4">Employee Accounts</h3>
@@ -74,7 +121,7 @@ export default function ManageUsers() {
             <tbody>
               {employees.map((emp, index) => (
                 <tr key={index} className="hover:bg-white/10 transition text-center">
-                  <td className="px-4 py-2">{emp.username || emp.email.split('@')[0]}</td>
+                  <td className="px-4 py-2">{emp.username || (emp.email || '').split('@')[0]}</td>
                   <td className="px-4 py-2">{emp.email}</td>
                   <td className="px-4 py-2">
                     <span className="bg-yellow-400 text-black text-xs font-semibold px-2 py-1 rounded-full">
@@ -101,7 +148,6 @@ export default function ManageUsers() {
     </div>
   );
 
-  // Render User Table
   const renderUserTable = () => (
     <div className="glass-card p-6 max-w-5xl mx-auto mb-10">
       <h3 className="text-2xl font-bold text-center mb-4">User Accounts</h3>
@@ -123,7 +169,7 @@ export default function ManageUsers() {
             <tbody>
               {users.map((user, index) => (
                 <tr key={index} className="hover:bg-white/10 transition text-center">
-                  <td className="px-4 py-2">{user.username || user.email.split('@')[0]}</td>
+                  <td className="px-4 py-2">{user.username || (user.email || '').split('@')[0]}</td>
                   <td className="px-4 py-2">{user.email}</td>
                   <td className="px-4 py-2">
                     <span className="bg-cyan-500 text-white text-xs font-semibold px-2 py-1 rounded-full">
@@ -163,7 +209,6 @@ export default function ManageUsers() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-blue-950 text-white p-6">
-      {/* Navigate to Dashboard */}
       <div className="mb-6">
         <button
           onClick={() => navigate('/admin/dashboard')}
@@ -172,7 +217,7 @@ export default function ManageUsers() {
           <FaArrowLeft /> Admin Dashboard
         </button>
       </div>
-      <h2 className="text-4xl font-bold text-center gradient-text mb-10 sm:text-5xl tracking-tight gradient-text fade-in">
+      <h2 className="text-4xl font-bold text-center gradient-text mb-10 sm:text-5xl tracking-tight fade-in">
         Manage Registered Users
       </h2>
       {renderEmployeeTable()}

@@ -37,6 +37,16 @@ function Shop() {
   const [wishIds, setWishIds] = useState(new Set());
   const productsPerPage = 12;
 
+  // 🔎 NEW: name filter from /shop?q=...
+  const [searchName, setSearchName] = useState('');
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const q = params.get('q') || '';
+    setSearchName(q);
+    // whenever q changes, start from page 1 so user sees matches immediately
+    setCurrentPage(1);
+  }, [location.search]);
+
   const categories = ['All', 'Phones', 'Accessories', 'Tablets', 'Repair Items'];
   const fallbackImage = '/images/fallback.jpg';
 
@@ -110,19 +120,23 @@ function Shop() {
   useEffect(loadWishlist, [loadWishlist]);
 
   // ---------- Filtering + pagination ----------
-  const filteredProducts = products.filter(
-    (p) =>
-      (activeCategory === 'All' || p.category === activeCategory) &&
-      Number(p.price ?? 0) >= priceRange[0] &&
-      Number(p.price ?? 0) <= priceRange[1]
-  );
+  const filteredProducts = products.filter((p) => {
+    const nameMatch =
+      !searchName ||
+      String(p.name || '').toLowerCase().includes(String(searchName).toLowerCase());
+    const categoryMatch = activeCategory === 'All' || p.category === activeCategory;
+    const price = Number(p.price ?? 0);
+    const priceMatch = price >= priceRange[0] && price <= priceRange[1];
+    return nameMatch && categoryMatch && priceMatch;
+  });
+
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage) || 1;
   const displayedProducts = filteredProducts.slice(
     (currentPage - 1) * productsPerPage,
     currentPage * productsPerPage
   );
 
-  // Reset page to 1 on filter changes
+  // Reset page to 1 on filter changes (except we already handle q above)
   useEffect(() => {
     setCurrentPage(1);
   }, [activeCategory, priceRange, productsPerPage]);
@@ -137,14 +151,7 @@ function Shop() {
     const idx = products.findIndex((p) => Number(p.id) === targetId);
     if (idx === -1) return;
 
-    // Ensure filters won't hide the target
-    if (activeCategory !== 'All') setActiveCategory('All');
-    const fullRange = [0, Number.MAX_SAFE_INTEGER];
-    if (priceRange[0] !== fullRange[0] || priceRange[1] !== fullRange[1]) {
-      setPriceRange(fullRange);
-    }
-
-    // Go to the page that contains the target product
+    // Keep your existing behavior: ensure the card is visible and scroll to it
     const page = Math.max(1, Math.floor(idx / productsPerPage) + 1);
     const scrollToCard = () => {
       const el = document.getElementById(`product-${targetId}`);
@@ -153,13 +160,11 @@ function Shop() {
 
     if (currentPage !== page) {
       setCurrentPage(page);
-      // Wait for page render, then scroll
       requestAnimationFrame(() => requestAnimationFrame(scrollToCard));
     } else {
-      // Already on correct page
       requestAnimationFrame(scrollToCard);
     }
-  }, [location.hash, products, productsPerPage, activeCategory, priceRange, currentPage]);
+  }, [location.hash, products, productsPerPage, currentPage]);
 
   // ---------- Actions ----------
   const handleAddToCart = async (product) => {
@@ -474,7 +479,7 @@ function Shop() {
                 return (
                   <motion.div
                     key={product.id}
-                    id={`product-${product.id}`} // <-- scroll target for deep-link
+                    id={`product-${product.id}`} // scroll target for deep-link
                     variants={fadeIn}
                     className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-lg group hover:shadow-xl transition"
                   >

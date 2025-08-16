@@ -412,19 +412,23 @@ function Shop() {
           variants={fadeIn}
         >
           <div>
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 w-full px-4 py-2 mb-4 bg-gradient-to-r from-indigo-600 to-purple-700 rounded-lg"
+              className="flex items-center gap-2 w-full px-4 py-2 mb-4 bg-gradient-to-r from-indigo-700 to-purple-700/20 rounded-lg"
             >
               <FaFilter /> Price Filter
-            </button>
+            </motion.button>
 
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => (currentUser ? navigate('/wishlist') : showNotification('Log in to view wishlist'))}
-              className="flex items-center gap-2 w-full px-4 py-2 mb-4 bg-gradient-to-r  from-pink-600 to-rose-700 rounded-lg"
+              className="flex items-center gap-2 w-full px-4 py-2 mb-4 bg-gradient-to-r  from-pink-700 to-rose-700/20 rounded-lg"
             >
               <FaHeart /> <span className="hidden md:inline">Wishlist</span>
-            </button>
+            </motion.button>
 
             <div className="flex flex-col gap-3 mb-6">
               {categories.map((cat) => (
@@ -435,7 +439,7 @@ function Shop() {
                   onClick={() => setActiveCategory(cat)}
                   className={`w-full text-left px-4 py-2 rounded-lg font-medium transition-all ${
                     activeCategory === cat
-                      ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-lg'
+                      ? 'bg-gradient-to-r from-cyan-700 to-blue-700/20 text-white shadow-lg'
                       : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                   }`}
                 >
@@ -498,7 +502,7 @@ function Shop() {
                           onClick={(e) => handleToggleWishlist(product, e)}
                           disabled={isBusy}
                           className={`w-10 h-10 rounded-full flex items-center justify-center disabled:opacity-60 ${
-                            inWishlist(product.id) ? 'bg-pink-600' : 'bg-gray-800/70 hover:bg-pink-600'
+                            inWishlist(product.id) ? 'bg-pink-600' : 'bg-gray-800/70 transpar hover:bg-pink-600'
                           }`}
                           aria-label="Toggle wishlist"
                         >

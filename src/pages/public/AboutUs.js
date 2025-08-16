@@ -45,7 +45,7 @@ export default function About() {
         {/* Our Story Section */}
         <motion.div initial="hidden" animate="visible" variants={stagger} className="grid md:grid-cols-2 gap-10 items-center">
           <motion.div variants={fadeIn}>
-            <h2 className="text-3xl font-bold mb-6 text-blue-400">Our Journey</h2>
+            <h2 className="text-3xl font-bold mb-6 text-gray-600 dark:text-gray-300">Our Journey</h2>
             <p className="text-gray-300 mb-4 leading-relaxed">
               Since 2021, FoneZone has delivered affordable and reliable mobile solutions.
               From humble beginnings as a small shop, we've grown into a leading retailer
@@ -79,7 +79,7 @@ export default function About() {
 
         {/* Our Team Section (now benefits from the wider container) */}
         <motion.div initial="hidden" animate="visible" variants={stagger}>
-          <h2 className="text-3xl font-bold mb-6 text-blue-400">Meet Our Team</h2>
+          <h2 className="text-3xl font-bold mb-6 text-gray-600 dark:text-gray-300">Meet Our Team</h2>
 
           {/* Wider grid with comfy spacing */}
           <div className="grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-7">
@@ -112,7 +112,7 @@ export default function About() {
 
         {/* Our Values Section */}
         <motion.div initial="hidden" animate="visible" variants={stagger}>
-          <h2 className="text-3xl font-bold mb-6 text-blue-400">Our Core Values</h2>
+          <h2 className="text-3xl font-bold mb-6 text-gray-600 dark:text-gray-300">Our Core Values</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <motion.div variants={fadeIn} className="bg-gray-800 rounded-xl p-6 border border-gray-700">
               <h3 className="text-xl font-bold text-blue-400 mb-3">Quality Service</h3>
@@ -138,7 +138,7 @@ export default function About() {
         {/* Find Us Section */}
         <motion.div initial="hidden" animate="visible" variants={stagger} className="grid md:grid-cols-2 gap-10 items-center">
           <motion.div variants={fadeIn} className="space-y-6">
-            <h2 className="text-3xl font-bold text-blue-400">Visit Our Store</h2>
+            <h2 className="text-3xl font-bold text-gray-600 dark:text-gray-300">Visit Our Store</h2>
             <p className="text-gray-300 text-sm">
               Find us at the heart of Colombo with easy parking and access. Come for sales, repairs, and more.
             </p>

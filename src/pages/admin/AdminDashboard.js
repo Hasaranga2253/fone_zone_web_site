@@ -351,8 +351,8 @@ export default function AdminDashboard() {
 
       {/* Footer buttons */}
       <div className="text-center mt-10 relative z-10 flex flex-col sm:flex-row justify-center gap-4">
-        <button onClick={handleLogout} className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition">Logout</button>
-        <button onClick={() => navigate('/home')} className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Go to Home</button>
+        <button onClick={handleLogout} className="px-6 py-2 rounded-xl bg-red-500/20 from-red-500/20 to-transparent border border-red-400/30 hover:bg-red-600/20 transition">Logout</button>
+        <button onClick={() => navigate('/home')} className="px-6 py-2 rounded-xl from-blue-500/20 to-transparent border border-blue-400/30 hover:bg-blue-600/20 transition">Go to Home</button>
       </div>
     </div>
   );
